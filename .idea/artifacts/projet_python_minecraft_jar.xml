@@ -1,0 +1,14 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="projet_python_minecraft:jar">
+    <output-path>$PROJECT_DIR$/classes/artifacts/projet_python_minecraft_jar</output-path>
+    <root id="archive" name="projet_python_minecraft.jar">
+      <element id="module-output" name="projet_python_minecraft" />
+      <element id="library" level="module" name="minecraft_server.1.16.1.jar" module-name="projet_python_minecraft" />
+      <element id="library" level="module" name="craftbukkit-1.16.1.jar" module-name="projet_python_minecraft" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/Jar_resources/craftbukkit-1.16.4.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$PROJECT_DIR$/Jar_resources/spigot-api-1.16.4-R0.1-20201213.004254-30-shaded.jar" path-in-jar="/" />
+      <element id="file-copy" path="$PROJECT_DIR$/plugin.yml" />
+      <element id="file-copy" path="$PROJECT_DIR$/config.yml" />
+    </root>
+  </artifact>
+</component>
