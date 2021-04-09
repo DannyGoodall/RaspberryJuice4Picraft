@@ -15,18 +15,19 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 
+import net.minecraft.server.v1_16_R3.ChunkConverterPalette;
 import org.apache.commons.lang.BooleanUtils;
-import org.bukkit.Bukkit;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.Server;
-import org.bukkit.World;
+import org.bukkit.*;
 //import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
+import org.bukkit.block.data.Bisected;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.block.data.type.Bamboo;
+import org.bukkit.block.data.FaceAttachable;
+import org.bukkit.block.data.Rail;
+import org.bukkit.block.data.type.*;
+import org.bukkit.block.data.type.Comparator;
 import org.bukkit.entity.*;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
@@ -1848,16 +1849,155 @@ public class RemoteSession {
                 send(getEntities(loc1, loc2));
 
                 // DG - Attempt to call generic method against an block
+            } else if (c.equals("block.material.invokeMethod")) {
+                // Generically call one of the material methods
+                // args[0], args[1], args[2] = location of block (x,y,z)
+                // args[3] contains the name of the method - isSolid, isOccluiding, etc.
+                plugin.getLogger().warning("Inside block.material.invokeMethod");
+
+                int x = Integer.parseInt(args[0]), y = Integer.parseInt(args[1]), z = Integer.parseInt(args[2]);
+
+                String methodName, methodSignature, methodReturns, methodParams;
+                methodName = args[3];
+
+                Block blockRecipient = world.getBlockAt(x, y, z);
+
+                plugin.getLogger().warning("blockRecipient: " + blockRecipient.toString());
+                Boolean boolReturn = null;
+                Float floatReturn;
+                Short shortReturn;
+                Integer intReturn;
+
+                plugin.getLogger().warning("methodName: " + methodName);
+                switch (methodName) {
+                    case "isSolid": {
+                        boolReturn = blockRecipient.getType().isSolid();
+                        send(boolReturn.toString());
+                        break;
+                    }
+                    case "isBlock": {
+                        boolReturn = blockRecipient.getType().isBlock();
+                        send(boolReturn.toString());
+                        break;
+                    }
+                    case "isAir": {
+                        boolReturn = blockRecipient.getType().isAir();
+                        send(boolReturn.toString());
+                        break;
+                    }
+                    case "isBurnable": {
+                        boolReturn = blockRecipient.getType().isBurnable();
+                        send(boolReturn.toString());
+                        break;
+                    }
+                    case "isEdible": {
+                        boolReturn = blockRecipient.getType().isEdible();
+                        send(boolReturn.toString());
+                        break;
+                    }
+                    case "isFlammable": {
+                        boolReturn = blockRecipient.getType().isFlammable();
+                        send(boolReturn.toString());
+                        break;
+                    }
+                    case "isFuel": {
+                        boolReturn = blockRecipient.getType().isFuel();
+                        send(boolReturn.toString());
+                        break;
+                    }
+                    case "isInteractable": {
+                        boolReturn = blockRecipient.getType().isInteractable();
+                        send(boolReturn.toString());
+                        break;
+                    }
+                    case "isItem": {
+                        boolReturn = blockRecipient.getType().isItem();
+                        send(boolReturn.toString());
+                        break;
+                    }
+                    case "isOccluding": {
+                        boolReturn = blockRecipient.getType().isOccluding();
+                        send(boolReturn.toString());
+                        break;
+                    }
+                    case "isRecord": {
+                        boolReturn = blockRecipient.getType().isRecord();
+                        send(boolReturn.toString());
+                        break;
+                    }
+                    case "getBlastResistance": {
+                        floatReturn = blockRecipient.getType().getBlastResistance();
+                        send(floatReturn.toString());
+                        break;
+                    }
+                    case "getHardness": {
+                        floatReturn = blockRecipient.getType().getHardness();
+                        send(floatReturn.toString());
+                        break;
+                    }
+                    case "getMaxDurability": {
+                        shortReturn = blockRecipient.getType().getMaxDurability();
+                        send(shortReturn.toString());
+                        break;
+                    }
+                    case "getMaxStackSize": {
+                        intReturn = blockRecipient.getType().getMaxStackSize();
+                        send(intReturn.toString());
+                        break;
+                    }
+                    default: {
+                        plugin.getLogger().warning("methodName: " + methodName + " NOT FOUND OR NOT IMPLEMENTED.");
+                        send(null);
+                        break;
+                    }
+                }
+            } else if (c.equals("block.isSolid")) {
+                plugin.getLogger().warning("Inside block.isSolid");
+                int x = Integer.parseInt(args[0]), y = Integer.parseInt(args[1]), z = Integer.parseInt(args[2]);
+
+                Block blockRecipient = world.getBlockAt(x, y, z);
+
+                plugin.getLogger().warning("blockRecipient: " + blockRecipient.toString());
+                Boolean boolReturn = null;
+
+                boolReturn = (boolean) blockRecipient.getType().isSolid();
+                send(boolReturn.toString());
+            } else if (c.equals("block.setSignText")) {
+                // Set the sign text
+                // args[0], args[1], args[2] = location of block (x,y,z)
+                // args[3], args[4], args[5], args[6] contain the 4 (or fewer) lines of text
+                plugin.getLogger().warning("block.signText");
+
+                int x = Integer.parseInt(args[0]), y = Integer.parseInt(args[1]), z = Integer.parseInt(args[2]);
+
+                Block blockRecipient = world.getBlockAt(x, y, z);
+
+                plugin.getLogger().warning("blockRecipient: " + blockRecipient.toString());
+                plugin.getLogger().warning("blockLocation: (" + Integer.toString(x) + "," + Integer.toString(y) + "," + Integer.toString(z) + ")");
+                BlockData blockData = blockRecipient.getBlockData();
+                plugin.getLogger().warning("blockData: " + blockData.toString());
+
+                if (blockRecipient.getState() instanceof Sign) {
+                    Sign sign = (Sign) blockRecipient.getState();
+                    for (int i = 3; i - 3 < 4 && i < args.length; i++) {
+                        sign.setLine(i - 3, args[i]);
+                        plugin.getLogger().warning("Line: "+Integer.toString(i-3) + " - " + args[i]);
+                    }
+                    sign.update();
+                } else {
+                    plugin.getLogger().warning("Cannot set sign text of a block that is NOT a sign.");
+                }
             } else if (c.equals("block.invokeMethod")) {
                 // Following the concept of reflection - https://stackoverflow.com/questions/18778819/dynamically-calling-a-class-method-in-java
                 // args[0], args[1], args[2] = location of block (x,y,z)
                 // args[3] contains the name of the method
                 // args[4..n] contain the parameters being passed to
-                plugin.getLogger().warning("Inside block.callMethod");
+                plugin.getLogger().warning("Inside block.invokeMethod");
 
                 int x = Integer.parseInt(args[0]), y = Integer.parseInt(args[1]), z = Integer.parseInt(args[2]);
 
                 Block blockRecipient = world.getBlockAt(x, y, z);
+
                 plugin.getLogger().warning("blockRecipient: " + blockRecipient.toString());
 
                 BlockData blockData = blockRecipient.getBlockData();
@@ -1893,10 +2033,37 @@ public class RemoteSession {
                 int additionalAgs = args.length - 2;
                 Method gotMethod = null;
                 Integer intReturn;
+                Set<Integer> setOfInteger;
                 Boolean boolReturn;
+                Boolean boolValue;
                 Double doubleReturn;
                 String stringReturn;
                 Bamboo.Leaves leavesReturn;
+                Axis axisValue;
+                Set<Axis> axesValue;
+                String newStringValue;
+                BlockFace blockFaceValue;
+                Set<BlockFace> blockFacesValue;
+                Instrument instrumentValue;
+                Note noteValue;
+                Rail.Shape railShapeValue;
+                Set<Rail.Shape> railShapesValue;
+                Slab.Type slabTypeValue;
+                boolean booleanArg;
+                Bisected.Half bisectedHalfValue;
+                Stairs.Shape stairsShapeValue;
+                Chest.Type chestTypeValue;
+                FaceAttachable.AttachedFace attachedFaceValue;
+                Wall.Height wallHeightValue;
+                Comparator.Mode comparatorModeValue;
+                StructureBlock.Mode structureBlockModeValue;
+                Jigsaw.Orientation jigsawOrientationValue;
+                Bed.Part bedPartValue;
+                int intValue;
+                Bell.Attachment bellAttachmentValue;
+                TechnicalPiston.Type technicalPistonTypeValue;
+                RedstoneWire.Connection redstoneWireConnectionValue;
+                Door.Hinge doorHingeValue;
 
                 plugin.getLogger().warning("---------> We have a method Signature : " + methodSignature.toString());
                 switch (methodSignature) {
@@ -1911,7 +2078,7 @@ public class RemoteSession {
                         // Used for setState() type of calls
                         gotMethod = classRecipient.getMethod(methodName, boolean.class);
                         plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
-                        boolean booleanArg = BooleanUtils.toBoolean(args[4]);
+                        booleanArg = BooleanUtils.toBoolean(args[4]);
                         plugin.getLogger().warning("booleanArg: " + Boolean.toString(booleanArg));
                         gotMethod.invoke(classRecipient.cast(blockData), booleanArg);
                         // Now associated the block data with the block
@@ -1963,7 +2130,7 @@ public class RemoteSession {
                     case "void:Leaves":
                         // Used for setLeaves in Bamboo
                         leavesReturn = Bamboo.Leaves.NONE;
-                        String newStringValue = args[4].toUpperCase();
+                        newStringValue = args[4].toUpperCase();
                         if (newStringValue.equals("SMALL")) {
                             leavesReturn = Bamboo.Leaves.SMALL;
                         } else if (newStringValue.equals("LARGE")) {
@@ -1975,6 +2142,482 @@ public class RemoteSession {
                         gotMethod.invoke(classRecipient.cast(blockData), leavesReturn);
                         // Now associated the block data with the block
                         blockRecipient.setBlockData(blockData);
+                        break;
+                    case "void:Axis":
+                        // Used for setLeaves in Bamboo
+                        newStringValue = args[4].toUpperCase();
+                        axisValue = Axis.valueOf(newStringValue);
+                        gotMethod = classRecipient.getMethod(methodName, Axis.class);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        plugin.getLogger().warning("axisReturn: " + axisValue.toString());
+                        gotMethod.invoke(classRecipient.cast(blockData), axisValue);
+                        // Now associated the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        break;
+                    case "Axis:void":
+                        // Used for getAxis in Bamboo
+                        gotMethod = classRecipient.getMethod(methodName);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        axisValue = (Axis) gotMethod.invoke(classRecipient.cast(blockData));
+                        // Now associated the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        send(axisValue.toString());
+                        break;
+                    case "Axes:void":
+                        // Used for getAxes in Bamboo
+                        gotMethod = classRecipient.getMethod(methodName);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        axesValue = (Set<Axis>) gotMethod.invoke(classRecipient.cast(blockData));
+                        // Now associated the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        send(axesValue.toString());
+                        break;
+                    case "boolean:BlockFace":
+                        // Used for Multiplefacing
+                        // Used for isState() type of calls
+                        newStringValue = args[4].toUpperCase();
+                        blockFaceValue = BlockFace.valueOf(newStringValue);
+                        gotMethod = classRecipient.getMethod(methodName, BlockFace.class);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        plugin.getLogger().warning("blockFace: " + blockFaceValue.toString());
+                        boolReturn = (boolean) gotMethod.invoke(classRecipient.cast(blockData), blockFaceValue);
+                        send(boolReturn.toString());
+                        break;
+                    case "void:BlockFace":
+                        // Used for setLeaves in Bamboo
+                        newStringValue = args[4].toUpperCase();
+                        blockFaceValue = BlockFace.valueOf(newStringValue);
+                        gotMethod = classRecipient.getMethod(methodName, BlockFace.class);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        plugin.getLogger().warning("blockFace: " + blockFaceValue.toString());
+                        gotMethod.invoke(classRecipient.cast(blockData), blockFaceValue);
+                        // Now associated the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        break;
+                    case "void:BlockFace:boolean":
+                        // Used for Multiple facing
+                        newStringValue = args[4].toUpperCase();
+                        booleanArg = BooleanUtils.toBoolean(args[5]);
+                        blockFaceValue = BlockFace.valueOf(newStringValue);
+                        gotMethod = classRecipient.getMethod(methodName, BlockFace.class, boolean.class);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        plugin.getLogger().warning("blockFace: " + blockFaceValue.toString());
+                        plugin.getLogger().warning("booleanArg: " + Boolean.toString(booleanArg));
+                        gotMethod.invoke(classRecipient.cast(blockData), blockFaceValue, booleanArg);
+                        // Now associated the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        break;
+                    case "BlockFace:void":
+                        // Used for getAxis in Bamboo
+                        gotMethod = classRecipient.getMethod(methodName);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        blockFaceValue = (BlockFace) gotMethod.invoke(classRecipient.cast(blockData));
+                        // Now associate the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        send(blockFaceValue.toString());
+                        break;
+                    case "BlockFaces:void":
+                        // Used for getAxes in Bamboo
+                        gotMethod = classRecipient.getMethod(methodName);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        blockFacesValue = (Set<BlockFace>) gotMethod.invoke(classRecipient.cast(blockData));
+                        // org.bukkit.block.data.FaceAttachable
+                        // Now associate the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        send(blockFacesValue.toString());
+                        break;
+                    case "void:Instrument":
+                        // Used for setLeaves in Bamboo
+                        newStringValue = args[4].toUpperCase();
+                        instrumentValue = Instrument.valueOf(newStringValue);
+                        gotMethod = classRecipient.getMethod(methodName, Instrument.class);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        plugin.getLogger().warning("instrumentValue: " + instrumentValue.toString());
+                        gotMethod.invoke(classRecipient.cast(blockData), instrumentValue);
+                        // Now associated the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        break;
+                    case "Instrument:void":
+                        // Used for getAxis in Bamboo
+                        gotMethod = classRecipient.getMethod(methodName);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        instrumentValue = (Instrument) gotMethod.invoke(classRecipient.cast(blockData));
+                        // Now associate the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        send(instrumentValue.toString());
+                        break;
+                    case "void:Note":
+                        // Used for setNote in NoteBlock
+                        newStringValue = args[4].toUpperCase();
+                        noteValue = new Note(Integer.valueOf(newStringValue));
+                        gotMethod = classRecipient.getMethod(methodName, Note.class);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        plugin.getLogger().warning("noteValue: " + noteValue.toString());
+                        gotMethod.invoke(classRecipient.cast(blockData), noteValue);
+                        // Now associated the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        break;
+                    case "Note:void":
+                        // Used for getAxis in Bamboo
+                        gotMethod = classRecipient.getMethod(methodName);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        noteValue = (Note) gotMethod.invoke(classRecipient.cast(blockData));
+                        // Now associate the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        send(noteValue.toString());
+                        break;
+                    case "void:Rail":
+                        // Used for setNote in NoteBlock
+                        newStringValue = args[4].toUpperCase();
+                        railShapeValue = Rail.Shape.valueOf(newStringValue);
+                        gotMethod = classRecipient.getMethod(methodName, Rail.Shape.class);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        plugin.getLogger().warning("railShapeValue: " + railShapeValue.toString());
+                        gotMethod.invoke(classRecipient.cast(blockData), railShapeValue);
+                        // Now associated the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        break;
+                    case "Rail:void":
+                        // Used for getAxis in Bamboo
+                        gotMethod = classRecipient.getMethod(methodName);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        railShapeValue = (Rail.Shape) gotMethod.invoke(classRecipient.cast(blockData));
+                        // Now associate the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        send(railShapeValue.toString());
+                        break;
+                    case "Rails:void":
+                        // Used for getAxis in Bamboo
+                        gotMethod = classRecipient.getMethod(methodName);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        railShapesValue = (Set<Rail.Shape>) gotMethod.invoke(classRecipient.cast(blockData));
+                        // Now associate the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        send(railShapesValue.toString());
+                        break;
+                    case "void:Bisected":
+                        // Used for setNote in NoteBlock
+                        newStringValue = args[4].toUpperCase();
+                        bisectedHalfValue = Bisected.Half.valueOf(newStringValue);
+                        gotMethod = classRecipient.getMethod(methodName, Bisected.Half.class);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        plugin.getLogger().warning("bisectedHalfValue: " + bisectedHalfValue.toString());
+                        gotMethod.invoke(classRecipient.cast(blockData), bisectedHalfValue);
+                        // Now associated the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        break;
+                    case "Bisected:void":
+                        // Used for getAxis in Bamboo
+                        gotMethod = classRecipient.getMethod(methodName);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        bisectedHalfValue = (Bisected.Half) gotMethod.invoke(classRecipient.cast(blockData));
+                        // Now associate the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        send(bisectedHalfValue.toString());
+                        break;
+                    case "void:Stairs":
+                        // Used for setNote in NoteBlock
+                        newStringValue = args[4].toUpperCase();
+                        stairsShapeValue = Stairs.Shape.valueOf(newStringValue);
+                        gotMethod = classRecipient.getMethod(methodName, Stairs.Shape.class);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        plugin.getLogger().warning("stairsShapeValue: " + stairsShapeValue.toString());
+                        gotMethod.invoke(classRecipient.cast(blockData), stairsShapeValue);
+                        // Now associated the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        break;
+                    case "Stairs:void":
+                        // Used for getAxis in Bamboo
+                        gotMethod = classRecipient.getMethod(methodName);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        stairsShapeValue = (Stairs.Shape) gotMethod.invoke(classRecipient.cast(blockData));
+                        // Now associate the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        send(stairsShapeValue.toString());
+                        break;
+                    case "void:Chest":
+                        // Used for setNote in NoteBlock
+                        newStringValue = args[4].toUpperCase();
+                        chestTypeValue = Chest.Type.valueOf(newStringValue);
+                        gotMethod = classRecipient.getMethod(methodName, Chest.Type.class);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        plugin.getLogger().warning("chestTypeValue: " + chestTypeValue.toString());
+                        gotMethod.invoke(classRecipient.cast(blockData), chestTypeValue);
+                        // Now associated the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        break;
+                    case "Chest:void":
+                        // Used for getAxis in Bamboo
+                        gotMethod = classRecipient.getMethod(methodName);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        chestTypeValue = (Chest.Type) gotMethod.invoke(classRecipient.cast(blockData));
+                        // Now associate the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        send(chestTypeValue.toString());
+                        break;
+                    case "void:Slab":
+                        // Used for setNote in NoteBlock
+                        newStringValue = args[4].toUpperCase();
+                        slabTypeValue = Slab.Type.valueOf(newStringValue);
+                        gotMethod = classRecipient.getMethod(methodName, Slab.Type.class);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        plugin.getLogger().warning("slabTypeValue: " + slabTypeValue.toString());
+                        gotMethod.invoke(classRecipient.cast(blockData), slabTypeValue);
+                        // Now associated the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        break;
+                    case "Slab:void":
+                        // Used for getAxis in Bamboo
+                        gotMethod = classRecipient.getMethod(methodName);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        slabTypeValue = (Slab.Type) gotMethod.invoke(classRecipient.cast(blockData));
+                        // Now associate the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        send(slabTypeValue.toString());
+                        break;
+                    case "void:ComparatorMode":
+                        // Used for setNote in NoteBlock
+                        newStringValue = args[4].toUpperCase();
+                        comparatorModeValue = Comparator.Mode.valueOf(newStringValue);
+                        gotMethod = classRecipient.getMethod(methodName, Comparator.Mode.class);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        plugin.getLogger().warning("comparatorModeValue: " + comparatorModeValue.toString());
+                        gotMethod.invoke(classRecipient.cast(blockData), comparatorModeValue);
+                        // Now associated the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        break;
+                    case "ComparatorMode:void":
+                        // Used for getAxis in Bamboo
+                        gotMethod = classRecipient.getMethod(methodName);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        comparatorModeValue = (Comparator.Mode) gotMethod.invoke(classRecipient.cast(blockData));
+                        // Now associate the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        send(comparatorModeValue.toString());
+                        break;
+                    case "void:StructureBlockMode":
+                        // Used for setNote in NoteBlock
+                        newStringValue = args[4].toUpperCase();
+                        structureBlockModeValue = StructureBlock.Mode.valueOf(newStringValue);
+                        gotMethod = classRecipient.getMethod(methodName, StructureBlock.Mode.class);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        plugin.getLogger().warning("structureBlockModeValue: " + structureBlockModeValue.toString());
+                        gotMethod.invoke(classRecipient.cast(blockData), structureBlockModeValue);
+                        // Now associated the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        break;
+                    case "StructureBlockMode:void":
+                        // Used for getAxis in Bamboo
+                        gotMethod = classRecipient.getMethod(methodName);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        structureBlockModeValue = (StructureBlock.Mode) gotMethod.invoke(classRecipient.cast(blockData));
+                        // Now associate the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        send(structureBlockModeValue.toString());
+                        break;
+                    case "void:JigsawOrientation":
+                        // Used for setNote in NoteBlock
+                        newStringValue = args[4].toUpperCase();
+                        jigsawOrientationValue = Jigsaw.Orientation.valueOf(newStringValue);
+                        gotMethod = classRecipient.getMethod(methodName, Jigsaw.Orientation.class);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        plugin.getLogger().warning("jigsawOrientationValue: " + jigsawOrientationValue.toString());
+                        gotMethod.invoke(classRecipient.cast(blockData), jigsawOrientationValue);
+                        // Now associated the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        break;
+                    case "JigsawOrientation:void":
+                        // Used for getAxis in Bamboo
+                        gotMethod = classRecipient.getMethod(methodName);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        jigsawOrientationValue = (Jigsaw.Orientation) gotMethod.invoke(classRecipient.cast(blockData));
+                        // Now associate the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        send(jigsawOrientationValue.toString());
+                        break;
+                    case "void:BedPart":
+                        // Used for setNote in NoteBlock
+                        newStringValue = args[4].toUpperCase();
+                        bedPartValue = Bed.Part.valueOf(newStringValue);
+                        gotMethod = classRecipient.getMethod(methodName, Bed.Part.class);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        plugin.getLogger().warning("bedPartValue: " + bedPartValue.toString());
+                        gotMethod.invoke(classRecipient.cast(blockData), bedPartValue);
+                        // Now associated the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        break;
+                    case "BedPart:void":
+                        // Used for getAxis in Bamboo
+                        gotMethod = classRecipient.getMethod(methodName);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        bedPartValue = (Bed.Part) gotMethod.invoke(classRecipient.cast(blockData));
+                        // Now associate the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        send(bedPartValue.toString());
+                        break;
+                    case "void:AttachedFace":
+                        // Used for switch
+                        newStringValue = args[4].toUpperCase();
+                        attachedFaceValue = FaceAttachable.AttachedFace.valueOf(newStringValue);
+                        gotMethod = classRecipient.getMethod(methodName, FaceAttachable.AttachedFace.class);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        plugin.getLogger().warning("attachedFaceValue: " + attachedFaceValue.toString());
+                        gotMethod.invoke(classRecipient.cast(blockData), attachedFaceValue);
+                        // Now associated the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        break;
+                    case "AttachedFace:void":
+                        // Used for switch
+                        gotMethod = classRecipient.getMethod(methodName);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        attachedFaceValue = (FaceAttachable.AttachedFace) gotMethod.invoke(classRecipient.cast(blockData));
+                        // Now associate the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        send(attachedFaceValue.toString());
+                        break;
+                    case "void:BellAttachment":
+                        // Used for switch
+                        newStringValue = args[4].toUpperCase();
+                        bellAttachmentValue = Bell.Attachment.valueOf(newStringValue);
+                        gotMethod = classRecipient.getMethod(methodName, Bell.Attachment.class);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        plugin.getLogger().warning("bellAttachmentValue: " + bellAttachmentValue.toString());
+                        gotMethod.invoke(classRecipient.cast(blockData), bellAttachmentValue);
+                        // Now associated the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        break;
+                    case "BellAttachment:void":
+                        // Used for switch
+                        gotMethod = classRecipient.getMethod(methodName);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        bellAttachmentValue = (Bell.Attachment) gotMethod.invoke(classRecipient.cast(blockData));
+                        // Now associate the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        send(bellAttachmentValue.toString());
+                        break;
+                    case "void:TechnicalPiston":
+                        // Used for switch
+                        newStringValue = args[4].toUpperCase();
+                        technicalPistonTypeValue = TechnicalPiston.Type.valueOf(newStringValue);
+                        gotMethod = classRecipient.getMethod(methodName, TechnicalPiston.Type.class);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        plugin.getLogger().warning("technicalPistonTypeValue: " + technicalPistonTypeValue.toString());
+                        gotMethod.invoke(classRecipient.cast(blockData), technicalPistonTypeValue);
+                        // Now associated the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        break;
+                    case "TechnicalPiston:void":
+                        // Used for switch
+                        gotMethod = classRecipient.getMethod(methodName);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        technicalPistonTypeValue = (TechnicalPiston.Type) gotMethod.invoke(classRecipient.cast(blockData));
+                        // Now associate the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        send(technicalPistonTypeValue.toString());
+                        break;
+                    case "void:DoorHinge":
+                        // Used for switch
+                        newStringValue = args[4].toUpperCase();
+                        doorHingeValue = Door.Hinge.valueOf(newStringValue);
+                        gotMethod = classRecipient.getMethod(methodName, Door.Hinge.class);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        plugin.getLogger().warning("doorHingeValue: " + doorHingeValue.toString());
+                        gotMethod.invoke(classRecipient.cast(blockData), doorHingeValue);
+                        // Now associated the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        break;
+                    case "DoorHinge:void":
+                        // Used for switch
+                        gotMethod = classRecipient.getMethod(methodName);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        doorHingeValue = (Door.Hinge) gotMethod.invoke(classRecipient.cast(blockData));
+                        // Now associate the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        send(doorHingeValue.toString());
+                        break;
+                    case "void:BlockFace:WallHeight":
+                        // Used for wall
+                        newStringValue = args[4].toUpperCase();
+                        blockFaceValue = BlockFace.valueOf(newStringValue);
+                        newStringValue = args[5].toUpperCase();
+                        wallHeightValue = Wall.Height.valueOf(newStringValue);
+                        gotMethod = classRecipient.getMethod(methodName, BlockFace.class, Wall.Height.class);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        plugin.getLogger().warning("wallHeightValue: " + wallHeightValue.toString());
+                        plugin.getLogger().warning("blockFaceValue: " + blockFaceValue.toString());
+                        gotMethod.invoke(classRecipient.cast(blockData), blockFaceValue, wallHeightValue);
+                        // Now associated the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        break;
+                    case "WallHeight:BlockFace":
+                        // Used for wall
+                        newStringValue = args[4].toUpperCase();
+                        blockFaceValue = BlockFace.valueOf(newStringValue);
+                        gotMethod = classRecipient.getMethod(methodName, BlockFace.class);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        plugin.getLogger().warning("blockFaceValue: " + blockFaceValue.toString());
+                        wallHeightValue = (Wall.Height) gotMethod.invoke(classRecipient.cast(blockData), blockFaceValue);
+                        // Now associate the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        send(wallHeightValue.toString());
+                        break;
+                    case "void:BlockFace:RedstoneWire":
+                        // Used for wall
+                        newStringValue = args[4].toUpperCase();
+                        blockFaceValue = BlockFace.valueOf(newStringValue);
+                        newStringValue = args[5].toUpperCase();
+                        redstoneWireConnectionValue = RedstoneWire.Connection.valueOf(newStringValue);
+                        gotMethod = classRecipient.getMethod(methodName, BlockFace.class, RedstoneWire.Connection.class);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        plugin.getLogger().warning("redstoneWireConnectionValue: " + redstoneWireConnectionValue.toString());
+                        plugin.getLogger().warning("blockFaceValue: " + blockFaceValue.toString());
+                        gotMethod.invoke(classRecipient.cast(blockData), blockFaceValue, redstoneWireConnectionValue);
+                        // Now associated the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        break;
+                    case "RedstoneWire:BlockFace":
+                        // Used for wall
+                        newStringValue = args[4].toUpperCase();
+                        blockFaceValue = BlockFace.valueOf(newStringValue);
+                        gotMethod = classRecipient.getMethod(methodName, BlockFace.class);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        plugin.getLogger().warning("blockFaceValue: " + blockFaceValue.toString());
+                        redstoneWireConnectionValue = (RedstoneWire.Connection) gotMethod.invoke(classRecipient.cast(blockData), blockFaceValue);
+                        // Now associate the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        send(redstoneWireConnectionValue.toString());
+                        break;
+                    case "void:int:boolean":
+                        // Used for brewing stand
+                        intValue = Integer.parseInt(args[4]);
+                        boolValue = BooleanUtils.toBoolean(args[5]);
+                        gotMethod = classRecipient.getMethod(methodName, int.class, boolean.class);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        plugin.getLogger().warning("intValue: " + Integer.toString(intValue));
+                        plugin.getLogger().warning("boolValue: " + boolValue.toString());
+                        gotMethod.invoke(classRecipient.cast(blockData), intValue, boolValue);
+                        // Now associated the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        break;
+                    case "boolean:int":
+                        // Used for brewing stand
+                        intValue = Integer.parseInt(args[4]);
+                        gotMethod = classRecipient.getMethod(methodName, int.class);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        plugin.getLogger().warning("intValue: " + Integer.toString(intValue));
+                        boolReturn = (boolean)  gotMethod.invoke(classRecipient.cast(blockData), intValue);
+                        // Now associate the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        send(boolReturn.toString());
+                        break;
+                    case "SetOfInt:void":
+                        // Used for brewing stand
+                        gotMethod = classRecipient.getMethod(methodName);
+                        plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
+                        setOfInteger = (Set<Integer>) gotMethod.invoke(classRecipient.cast(blockData));
+                        // Now associate the block data with the block
+                        blockRecipient.setBlockData(blockData);
+                        send(setOfInteger.toString());
                         break;
                     case "void:double":
                         // setHealth
