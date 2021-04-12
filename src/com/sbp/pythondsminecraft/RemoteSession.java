@@ -1981,7 +1981,7 @@ public class RemoteSession {
                     Sign sign = (Sign) blockRecipient.getState();
                     for (int i = 3; i - 3 < 4 && i < args.length; i++) {
                         sign.setLine(i - 3, args[i]);
-                        plugin.getLogger().warning("Line: "+Integer.toString(i-3) + " - " + args[i]);
+                        plugin.getLogger().warning("Line: " + Integer.toString(i - 3) + " - " + args[i]);
                     }
                     sign.update();
                 } else {
@@ -2605,7 +2605,7 @@ public class RemoteSession {
                         gotMethod = classRecipient.getMethod(methodName, int.class);
                         plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
                         plugin.getLogger().warning("intValue: " + Integer.toString(intValue));
-                        boolReturn = (boolean)  gotMethod.invoke(classRecipient.cast(blockData), intValue);
+                        boolReturn = (boolean) gotMethod.invoke(classRecipient.cast(blockData), intValue);
                         // Now associate the block data with the block
                         blockRecipient.setBlockData(blockData);
                         send(boolReturn.toString());
@@ -2636,12 +2636,20 @@ public class RemoteSession {
                 }
 
                 // DG - Attempt to call generic method against an entity
-
+            } else if (c.equals("world.getPlayerEntityID")) {
+                Player player;
+                player = plugin.getHostPlayer();
+                int playerEntityID = player.getEntityId();
+                send(Integer.toString(playerEntityID));
             } else if (c.equals("entity.invokeMethod")) {
                 // Following the concept of reflection - https://stackoverflow.com/questions/18778819/dynamically-calling-a-class-method-in-java
                 // argv[0] contains the entity
                 // argv[1] contains the name of the method
-                plugin.getLogger().warning("Inside entity.callMethod");
+                plugin.getLogger().warning("--------------------------------->");
+                plugin.getLogger().warning("Inside entity.invokeMethod");
+                for (int i = 0; i < args.length; i++) {
+                    plugin.getLogger().warning("Args(" + Integer.toString(i) + ") = " + args[i]);
+                }
 
                 // org.bukkit.entity.Entity entityRecipient = (org.bukkit.entity.Entity) plugin.getEntity(Integer.parseInt(args[0]));
                 org.bukkit.entity.Entity entityRecipient = plugin.getEntity(Integer.parseInt(args[0]));
@@ -2686,7 +2694,21 @@ public class RemoteSession {
                 Method methodActual = null;
                 Integer intReturn;
                 Boolean boolReturn;
+                boolean booleanReturn;
                 Double doubleReturn;
+                double doubleReturn2;
+                DyeColor dyeColorReturn;
+                UUID uuidReturn;
+                Integer entityID;
+                Entity entityParameter;
+                EntityType entityTypeReturn;
+                String stringReturn, stringParameter;
+                Set<String> stringsReturn;
+                BlockFace blockfaceReturn, blockFaceParameter;
+                Location locationReturn, locationParameter;
+                Vector vectorReturn, vectorParameter;
+                Double x, y, z;
+                float floatReturn, floatParamter;
                 // String[] methodArgs = {};
 
                 if (methodSignature.isEmpty()) {
@@ -2740,8 +2762,14 @@ public class RemoteSession {
                     }
                 } else {
                     // Here we have a method signature
-                    plugin.getLogger().warning("---------------------------------> We have a method Signature");
+                    plugin.getLogger().warning("We have a method Signature: (" + methodSignature + ")");
                     switch (methodSignature) {
+
+                        case "void:void":
+                            // setHealth
+                            methodActual = classRecipient.getMethod(methodName);
+                            methodActual.invoke(entityRecipient);
+                            break;
                         case "void:double":
                             // setHealth
                             methodActual = classRecipient.getMethod(methodName, double.class);
@@ -2754,6 +2782,121 @@ public class RemoteSession {
                             doubleReturn = (Double) methodActual.invoke(entityRecipient);
                             send(doubleReturn.toString());
                             break;
+                        case "double:void":
+                            // getHeight
+                            // Is this needed (i.e. double and Double?)
+                            methodActual = classRecipient.getMethod(methodName);
+                            doubleReturn2 = (double) methodActual.invoke(entityRecipient);
+                            send(Double.toString(doubleReturn2));
+                            break;
+                        case "boolean:void":
+                            // getHealth
+                            methodActual = classRecipient.getMethod(methodName);
+                            boolReturn = (boolean) methodActual.invoke(entityRecipient);
+                            send(boolReturn.toString());
+                            break;
+                        case "void:boolean":
+                            // setHealth
+                            methodActual = classRecipient.getMethod(methodName, boolean.class);
+                            boolReturn = (boolean) BooleanUtils.toBoolean(args[2]);
+                            methodActual.invoke(entityRecipient, boolReturn);
+                            break;
+                        case "int:void":
+                            // getHealth
+                            methodActual = classRecipient.getMethod(methodName);
+                            intReturn = (int) methodActual.invoke(entityRecipient);
+                            send(intReturn.toString());
+                            break;
+                        case "void:int":
+                            // setHealth
+                            methodActual = classRecipient.getMethod(methodName, int.class);
+                            intReturn = (int) Integer.parseInt(args[2]);
+                            methodActual.invoke(entityRecipient, intReturn);
+                            break;
+                        case "DyeColor:void":
+                            // getHealth
+                            methodActual = classRecipient.getMethod(methodName);
+                            dyeColorReturn = (DyeColor) methodActual.invoke(entityRecipient);
+                            send(dyeColorReturn.toString());
+                            break;
+                        case "void:DyeColor":
+                            // setHealth
+                            methodActual = classRecipient.getMethod(methodName, DyeColor.class);
+                            dyeColorReturn = DyeColor.valueOf(args[2]);
+                            methodActual.invoke(entityRecipient, dyeColorReturn);
+                            break;
+                        case "UUID:void":
+                            // getHealth
+                            methodActual = classRecipient.getMethod(methodName);
+                            uuidReturn = (UUID) methodActual.invoke(entityRecipient);
+                            send(uuidReturn.toString());
+                            break;
+                        case "void:UUID":
+                            // setHealth
+                            methodActual = classRecipient.getMethod(methodName, UUID.class);
+                            uuidReturn = UUID.fromString(args[2]);
+                            methodActual.invoke(entityRecipient, uuidReturn);
+                            break;
+                        case "EntityType:void":
+                            // getHealth
+                            methodActual = classRecipient.getMethod(methodName);
+                            entityTypeReturn = (EntityType) methodActual.invoke(entityRecipient);
+                            send(entityTypeReturn.toString());
+                            break;
+                        case "boolean:Entity":
+                            // addPassenger
+                            entityID = Integer.parseInt(args[2]);
+                            entityParameter = plugin.getEntity(entityID);
+                            methodActual = classRecipient.getMethod(methodName, Entity.class);
+                            boolReturn = (boolean) methodActual.invoke(entityRecipient, entityParameter);
+                            send(boolReturn.toString());
+                            break;
+                        case "boolean:String":
+                            // addScoreboardTag
+                            stringParameter = args[2];
+                            methodActual = classRecipient.getMethod(methodName, String.class);
+                            boolReturn = (boolean) methodActual.invoke(entityRecipient, args[2]);
+                            send(boolReturn.toString());
+                            break;
+                        case "Strings:void":
+                            // getHealth
+                            methodActual = classRecipient.getMethod(methodName);
+                            stringsReturn = (Set<String>) methodActual.invoke(entityRecipient);
+                            send(stringsReturn.toString());
+                            break;
+                        case "BlockFace:void":
+                            // getHealth
+                            methodActual = classRecipient.getMethod(methodName);
+                            blockfaceReturn = (BlockFace) methodActual.invoke(entityRecipient);
+                            send(blockfaceReturn.toString());
+                            break;
+                        case "Location:void":
+                            // getHealth
+                            methodActual = classRecipient.getMethod(methodName);
+                            locationReturn = (Location) methodActual.invoke(entityRecipient);
+                            send(locationReturn.toString());
+                            break;
+                        case "Vector:void":
+                            // getVelocity
+                            methodActual = classRecipient.getMethod(methodName);
+                            vectorReturn = (Vector) methodActual.invoke(entityRecipient);
+                            send(vectorReturn.toString());
+                            break;
+                        case "void:Vector":
+                            // setVelocity
+                            methodActual = classRecipient.getMethod(methodName, Vector.class);
+                            x = (double) Double.parseDouble(args[2]);
+                            y = (double) Double.parseDouble(args[3]);
+                            z = (double) Double.parseDouble(args[4]);
+                            vectorReturn = new Vector(x, y, z);
+                            methodActual.invoke(entityRecipient, vectorReturn);
+                            break;
+                        case "void:Float":
+                            // getRotation
+                            methodActual = classRecipient.getMethod(methodName, float.class);
+                            floatParamter = (float) Float.parseFloat(args[2]);
+                            methodActual.invoke(entityRecipient, floatParamter);
+                            break;
                         default:
                             plugin.getLogger().warning("Didn't find the correct method signature for[" + methodSignature + "]");
                     }
@@ -2765,7 +2908,7 @@ public class RemoteSession {
             }
         } catch (Exception e) {
 
-            plugin.getLogger().warning("Error occured handling command");
+            plugin.getLogger().warning("Error occurred handling command");
             e.printStackTrace();
             send("Fail");
 
