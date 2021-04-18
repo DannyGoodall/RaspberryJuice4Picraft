@@ -1849,6 +1849,10 @@ public class RemoteSession {
                 send(getEntities(loc1, loc2));
 
                 // DG - Attempt to call generic method against an block
+            } else if (c.equals("world.getAllEntities")) {
+                // DG - Find all entities inside the world
+                plugin.getLogger().warning("Inside world.getAllEntities");
+                send(getEntities());
             } else if (c.equals("block.material.invokeMethod")) {
                 // Generically call one of the material methods
                 // args[0], args[1], args[2] = location of block (x,y,z)
@@ -2641,7 +2645,7 @@ public class RemoteSession {
                 player = plugin.getHostPlayer();
                 int playerEntityID = player.getEntityId();
                 send(Integer.toString(playerEntityID));
-            } else if (c.equals("entity.invokeMethod")) {
+            } else if (c.equals("entity.invokeMethodXXX")) {
                 // Following the concept of reflection - https://stackoverflow.com/questions/18778819/dynamically-calling-a-class-method-in-java
                 // argv[0] contains the entity
                 // argv[1] contains the name of the method
@@ -2708,6 +2712,8 @@ public class RemoteSession {
                 Location locationReturn, locationParameter;
                 Vector vectorReturn, vectorParameter;
                 Double x, y, z;
+                World worldReturn;
+
                 float floatReturn, floatParamter;
                 // String[] methodArgs = {};
 
@@ -2858,6 +2864,23 @@ public class RemoteSession {
                             boolReturn = (boolean) methodActual.invoke(entityRecipient, args[2]);
                             send(boolReturn.toString());
                             break;
+                        case "boolean:Location":
+                            // addScoreboardTag
+                            x = Double.parseDouble(args[2]);
+                            y = Double.parseDouble(args[3]);
+                            z = Double.parseDouble(args[4]);
+                            plugin.getLogger().warning("We got parameters: x: ( " + Double.toString(x) + " )");
+                            plugin.getLogger().warning("We got parameters: y: ( " + Double.toString(y) + " )");
+                            plugin.getLogger().warning("We got parameters: z: ( " + Double.toString(z) + " )");
+
+                            methodActual = classRecipient.getMethod(methodName, Location.class);
+                            worldReturn = origin.getWorld();
+                            plugin.getLogger().warning("worldReturn: ( " + worldReturn.toString() + " )");
+                            locationReturn = new Location(worldReturn, x, y, z);
+                            plugin.getLogger().warning("locationReturn: ( " + locationReturn.toString() + " )");
+                            boolReturn = (boolean) methodActual.invoke(entityRecipient, locationReturn);
+                            send(boolReturn.toString());
+                            break;
                         case "Strings:void":
                             // getHealth
                             methodActual = classRecipient.getMethod(methodName);
@@ -2902,6 +2925,381 @@ public class RemoteSession {
                     }
                 }
                 // not a command which is supported
+            } else if (c.equals("world.invokeMethod") || c.equals("entity.invokeMethod")) {
+                // Following the concept of reflection - https://stackoverflow.com/questions/18778819/dynamically-calling-a-class-method-in-java
+                // argv[0] contains the entity
+                // argv[1] contains the name of the method
+
+                plugin.getLogger().warning("--------------------------------->");
+                plugin.getLogger().warning("Inside " + c);
+
+                int firstArg;
+                World worldRecipient = origin.getWorld();
+                Class classRecipient;
+                Entity entityRecipient = null;
+                EntityType entityType;
+                String iam;
+
+                if (c.equals("world.invokeMethod")) {
+                    iam = "world";
+                    classRecipient = worldRecipient.getClass();
+                    firstArg = 1;
+                } else {
+                    iam = "entity";
+                    entityRecipient = plugin.getEntity(Integer.parseInt(args[0]));
+                    plugin.getLogger().warning("entityRecipient: " + entityRecipient.toString());
+                    entityType = entityRecipient.getType();
+                    plugin.getLogger().warning("entityType: " + entityType.toString());
+                    classRecipient = entityRecipient.getClass();
+                    firstArg = 2;
+                }
+                plugin.getLogger().warning("worldRecipient: " + worldRecipient.toString());
+                plugin.getLogger().warning("classRecipient: " + classRecipient.toString());
+                plugin.getLogger().warning("firstArg: " + Integer.toString(firstArg));
+                for (int i = 0; i < args.length; i++) {
+                    plugin.getLogger().warning("Args(" + Integer.toString(i) + ") = " + args[i]);
+                }
+
+                // Here we either have a method name and no signature or we have both
+                // We will split it on "|" and see what we have
+                // For example
+                // exampleMethod|void:Location:Location
+                //
+                // would signify that we have a method called exampleMethod that returns void and is passed
+                // two parameters, both of type Location
+
+                String[] parts;
+                String methodName, methodSignature;
+                parts = args[firstArg - 1].split("\\|");
+                methodName = parts[0];
+                if (parts.length > 1) {
+                    methodSignature = parts[1];
+                } else {
+                    methodSignature = "";
+                }
+
+                plugin.getLogger().warning("methodName: " + methodName);
+
+                Method methodActual = null;
+                Integer intReturn;
+                Boolean boolReturn;
+                boolean booleanReturn;
+                Double doubleReturn;
+                double doubleReturn2;
+                DyeColor dyeColorReturn;
+                UUID uuidReturn;
+                Integer entityID;
+                Entity entityParameter;
+                EntityType entityTypeReturn;
+                String stringReturn, stringParameter;
+                String[] stringsReturn;
+                Set<String> stringSetReturn;
+                BlockFace blockfaceReturn, blockFaceParameter;
+                Location locationReturn, locationParameter;
+                Vector vectorReturn, vectorParameter;
+                Double x, y, z;
+                World worldReturn;
+                float floatReturn, floatParamter;
+                LightningStrike lightningStrike;
+                long longParameter, longReturn;
+                TreeType treeTypeParameter, treeTypeReturn;
+                LivingEntity livingEntityParameter, liveEntityReturn;
+
+                // Here we have a method signature
+                plugin.getLogger().warning("We have a method Signature: (" + methodSignature + ")");
+                switch (methodSignature) {
+
+                    case "void:void":
+                        // setHealth
+                        methodActual = classRecipient.getMethod(methodName);
+                        //methodActual.invoke(worldRecipient);
+                        methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
+                        break;
+                    case "void:double":
+                        // setHealth
+                        methodActual = classRecipient.getMethod(methodName, double.class);
+                        doubleReturn = Double.parseDouble(args[firstArg]);
+                        //methodActual.invoke(worldRecipient, doubleReturn);
+                        methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, doubleReturn);
+                        break;
+                    case "Double:void":
+                        // getHealth
+                        methodActual = classRecipient.getMethod(methodName);
+                        //doubleReturn = (Double) methodActual.invoke(worldRecipient);
+                        doubleReturn = (Double) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
+                        send(doubleReturn.toString());
+                        break;
+                    case "double:void":
+                        // getHeight
+                        // Is this needed (i.e. double and Double?)
+                        methodActual = classRecipient.getMethod(methodName);
+                        //doubleReturn2 = (double) methodActual.invoke(worldRecipient);
+                        doubleReturn2 = (double) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
+                        send(Double.toString(doubleReturn2));
+                        break;
+                    case "boolean:void":
+                        // getHealth
+                        methodActual = classRecipient.getMethod(methodName);
+                        //boolReturn = (boolean) methodActual.invoke(worldRecipient);
+                        boolReturn = (boolean) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
+                        send(boolReturn.toString());
+                        break;
+                    case "void:boolean":
+                        // setHealth
+                        methodActual = classRecipient.getMethod(methodName, boolean.class);
+                        boolReturn = (boolean) BooleanUtils.toBoolean(args[firstArg]);
+                        //methodActual.invoke(worldRecipient, boolReturn);
+                        methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, boolReturn);
+                        break;
+                    case "string:void":
+                        // getHealth
+                        methodActual = classRecipient.getMethod(methodName);
+                        //boolReturn = (boolean) methodActual.invoke(worldRecipient);
+                        stringReturn = (String) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
+                        send(stringReturn);
+                        break;
+                    case "void:string":
+                        // setHealth
+                        methodActual = classRecipient.getMethod(methodName, String.class);
+                        methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, args[firstArg]);
+                        break;
+                    case "int:void":
+                        // getHealth
+                        methodActual = classRecipient.getMethod(methodName);
+                        //intReturn = (int) methodActual.invoke(worldRecipient);
+                        intReturn = (int) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
+                        send(intReturn.toString());
+                        break;
+                    case "void:int":
+                        // setHealth
+                        methodActual = classRecipient.getMethod(methodName, int.class);
+                        intReturn = (int) Integer.parseInt(args[firstArg]);
+                        //methodActual.invoke(worldRecipient, intReturn);
+                        methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, intReturn);
+                        break;
+                    case "long:void":
+                        // getHealth
+                        methodActual = classRecipient.getMethod(methodName);
+                        longReturn = (long) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
+                        send(Long.toString(longReturn));
+                        break;
+                    case "void:long":
+                        // setHealth
+                        methodActual = classRecipient.getMethod(methodName, long.class);
+                        longParameter = (long) Long.parseLong(args[firstArg]);
+                        //methodActual.invoke(worldRecipient, intReturn);
+                        methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, longParameter);
+                        break;
+                    case "DyeColor:void":
+                        // getHealth
+                        methodActual = classRecipient.getMethod(methodName);
+                        //dyeColorReturn = (DyeColor) methodActual.invoke(worldRecipient);
+                        dyeColorReturn = (DyeColor) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
+                        send(dyeColorReturn.toString());
+                        break;
+                    case "void:DyeColor":
+                        // setHealth
+                        methodActual = classRecipient.getMethod(methodName, DyeColor.class);
+                        dyeColorReturn = DyeColor.valueOf(args[firstArg]);
+                        //methodActual.invoke(worldRecipient, dyeColorReturn);
+                        methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, dyeColorReturn);
+                        break;
+                    case "UUID:void":
+                        // getHealth
+                        methodActual = classRecipient.getMethod(methodName);
+                        //uuidReturn = (UUID) methodActual.invoke(worldRecipient);
+                        uuidReturn = (UUID) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
+                        send(uuidReturn.toString());
+                        break;
+                    case "void:UUID":
+                        // setHealth
+                        methodActual = classRecipient.getMethod(methodName, UUID.class);
+                        uuidReturn = UUID.fromString(args[firstArg]);
+                        //methodActual.invoke(worldRecipient, uuidReturn);
+                        methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, uuidReturn);
+                        break;
+//                    case "EntityType:void":
+//                        // getHealth
+//                        methodActual = classRecipient.getMethod(methodName);
+//                        //entityTypeReturn = (EntityType) methodActual.invoke(worldRecipient);
+//                        entityTypeReturn = (EntityType) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
+//                        send(entityTypeReturn.toString());
+//                        break;
+                    case "EntityType:void":
+                        // getHealth
+                        methodActual = classRecipient.getMethod(methodName);
+                        //entityTypeReturn = (EntityType) methodActual.invoke(worldRecipient);
+                        entityTypeReturn = (EntityType) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
+                        send(entityTypeReturn.toString());
+                        break;
+                    case "LivingEntity:void":
+                        // getTarget
+                        methodActual = classRecipient.getMethod(methodName);
+                        //entityTypeReturn = (EntityType) methodActual.invoke(worldRecipient);
+                        liveEntityReturn = (LivingEntity) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
+                        send(liveEntityReturn.toString());
+                        break;
+                    case "void:LivingEntity":
+                        // setTarget
+                        entityID = Integer.parseInt(args[firstArg]);
+                        entityParameter = plugin.getEntity(entityID);
+                        plugin.getLogger().warning("entityID: " + Integer.toString(entityID));
+                        plugin.getLogger().warning("entityParameter: " + entityParameter.toString());
+                        methodActual = classRecipient.getMethod(methodName, LivingEntity.class);
+                        methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, entityParameter);
+                        break;
+                    case "void:Entity":
+                        // attack
+                        entityID = Integer.parseInt(args[firstArg]);
+                        entityParameter = plugin.getEntity(entityID);
+                        plugin.getLogger().warning("entityID: " + Integer.toString(entityID));
+                        plugin.getLogger().warning("entityParameter: " + entityParameter.toString());
+                        methodActual = classRecipient.getMethod(methodName, Entity.class);
+                        methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, entityParameter);
+                        break;
+                    case "boolean:Entity":
+                        // addPassenger
+                        entityID = Integer.parseInt(args[firstArg]);
+                        entityParameter = plugin.getEntity(entityID);
+                        methodActual = classRecipient.getMethod(methodName, Entity.class);
+                        //boolReturn = (boolean) methodActual.invoke(worldRecipient, entityParameter);
+                        boolReturn = (boolean) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, entityParameter);
+                        send(boolReturn.toString());
+                        break;
+                    case "boolean:String":
+                        // addScoreboardTag
+                        stringParameter = args[firstArg];
+                        methodActual = classRecipient.getMethod(methodName, String.class);
+                        //boolReturn = (boolean) methodActual.invoke(worldRecipient, args[firstArg]);
+                        boolReturn = (boolean) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, args[firstArg]);
+                        send(boolReturn.toString());
+                        break;
+                    case "boolean:Location":
+                        // addScoreboardTag
+                        x = Double.parseDouble(args[firstArg]);
+                        y = Double.parseDouble(args[firstArg + 1]);
+                        z = Double.parseDouble(args[firstArg + 2]);
+                        plugin.getLogger().warning("We got parameters: x: ( " + Double.toString(x) + " )");
+                        plugin.getLogger().warning("We got parameters: y: ( " + Double.toString(y) + " )");
+                        plugin.getLogger().warning("We got parameters: z: ( " + Double.toString(z) + " )");
+
+                        methodActual = classRecipient.getMethod(methodName, Location.class);
+                        worldReturn = origin.getWorld();
+                        plugin.getLogger().warning("worldReturn: ( " + worldReturn.toString() + " )");
+                        locationReturn = new Location(worldReturn, x, y, z);
+                        plugin.getLogger().warning("locationReturn: ( " + locationReturn.toString() + " )");
+                        //boolReturn = (boolean) methodActual.invoke(worldRecipient, locationReturn);
+                        boolReturn = (boolean) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, locationReturn);
+                        send(boolReturn.toString());
+                        break;
+                    case "void:Location":
+                        // setSpawnLocation
+                        x = Double.parseDouble(args[firstArg]);
+                        y = Double.parseDouble(args[firstArg + 1]);
+                        z = Double.parseDouble(args[firstArg + 2]);
+                        plugin.getLogger().warning("We got parameters: x: ( " + Double.toString(x) + " )");
+                        plugin.getLogger().warning("We got parameters: y: ( " + Double.toString(y) + " )");
+                        plugin.getLogger().warning("We got parameters: z: ( " + Double.toString(z) + " )");
+
+                        methodActual = classRecipient.getMethod(methodName, Location.class);
+                        worldReturn = origin.getWorld();
+                        plugin.getLogger().warning("worldReturn: ( " + worldReturn.toString() + " )");
+                        locationReturn = new Location(worldReturn, x, y, z);
+                        plugin.getLogger().warning("locationReturn: ( " + locationReturn.toString() + " )");
+                        methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, locationReturn);
+                        break;
+                    case "LightningStrike:Location":
+                        // addScoreboardTag
+                        x = Double.parseDouble(args[firstArg]);
+                        y = Double.parseDouble(args[firstArg + 1]);
+                        z = Double.parseDouble(args[firstArg + 2]);
+                        plugin.getLogger().warning("We got parameters: x: ( " + Double.toString(x) + " )");
+                        plugin.getLogger().warning("We got parameters: y: ( " + Double.toString(y) + " )");
+                        plugin.getLogger().warning("We got parameters: z: ( " + Double.toString(z) + " )");
+
+                        methodActual = classRecipient.getMethod(methodName, Location.class);
+                        worldReturn = origin.getWorld();
+                        plugin.getLogger().warning("worldReturn: ( " + worldReturn.toString() + " )");
+                        locationReturn = new Location(worldReturn, x, y, z);
+                        plugin.getLogger().warning("locationReturn: ( " + locationReturn.toString() + " )");
+                        //lightningStrike = (LightningStrike) methodActual.invoke(worldRecipient, locationReturn);
+                        lightningStrike = (LightningStrike) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, locationReturn);
+                        plugin.getLogger().warning("lightningString: ( " + lightningStrike.toString() + " )");
+                        send(lightningStrike.toString());
+                        break;
+                    case "boolean:Location:TreeType":
+                        // generateTree
+                        locationParameter = toLocation(
+                                args[firstArg],
+                                args[firstArg + 1],
+                                args[firstArg + 2],
+                                origin.getWorld()
+                        );
+
+                        treeTypeParameter = TreeType.valueOf(args[firstArg+3].toUpperCase());
+                        plugin.getLogger().warning("treeTypeParameter: ( " + treeTypeParameter.toString() + " )");
+
+                        methodActual = classRecipient.getMethod(methodName, Location.class, TreeType.class);
+
+                        boolReturn = (boolean) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, locationParameter, treeTypeParameter);
+                        plugin.getLogger().warning("boolReturn: ( " + boolReturn.toString() + " )");
+                        send(boolReturn.toString());
+                        break;
+                    case "Strings:void":
+                        // getHealth
+                        methodActual = classRecipient.getMethod(methodName);
+                        //stringsReturn = (Set<String>) methodActual.invoke(worldRecipient);
+                        stringsReturn = (String[]) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
+                        send(Arrays.toString(stringsReturn));
+                        break;
+                    case "StringSet:void":
+                        // getHealth
+                        methodActual = classRecipient.getMethod(methodName);
+                        //stringsReturn = (Set<String>) methodActual.invoke(worldRecipient);
+                        stringSetReturn = (Set<String>) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
+                        send(stringSetReturn.toString());
+                        break;
+                    case "BlockFace:void":
+                        // getHealth
+                        methodActual = classRecipient.getMethod(methodName);
+                        //blockfaceReturn = (BlockFace) methodActual.invoke(worldRecipient);
+                        blockfaceReturn = (BlockFace) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
+                        send(blockfaceReturn.toString());
+                        break;
+                    case "Location:void":
+                        // getHealth
+                        methodActual = classRecipient.getMethod(methodName);
+                        //locationReturn = (Location) methodActual.invoke(worldRecipient);
+                        locationReturn = (Location) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
+                        send(locationReturn.toString());
+                        break;
+                    case "Vector:void":
+                        // getVelocity
+                        methodActual = classRecipient.getMethod(methodName);
+                        //vectorReturn = (Vector) methodActual.invoke(worldRecipient);
+                        vectorReturn = (Vector) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
+                        send(vectorReturn.toString());
+                        break;
+                    case "void:Vector":
+                        // setVelocity
+                        methodActual = classRecipient.getMethod(methodName, Vector.class);
+                        x = (double) Double.parseDouble(args[firstArg]);
+                        y = (double) Double.parseDouble(args[firstArg + 1]);
+                        z = (double) Double.parseDouble(args[firstArg + 2]);
+                        vectorReturn = new Vector(x, y, z);
+                        //methodActual.invoke(worldRecipient, vectorReturn);
+                        methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, vectorReturn);
+                        break;
+                    case "void:Float":
+                        // getRotation
+                        methodActual = classRecipient.getMethod(methodName, float.class);
+                        floatParamter = (float) Float.parseFloat(args[firstArg]);
+                        //methodActual.invoke(worldRecipient, floatParamter);
+                        methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, floatParamter);
+                        break;
+                    default:
+                        plugin.getLogger().warning("Didn't find the correct method signature for[" + methodSignature + "]");
+                }
             } else {
                 plugin.getLogger().warning(c + " is not supported.");
                 send("Fail");
@@ -2913,6 +3311,24 @@ public class RemoteSession {
             send("Fail");
 
         }
+    }
+
+
+    private Location toLocation(String argX, String argY, String argZ, World world) {
+        double x, y, z;
+        Location locationReturn;
+
+        x = Double.parseDouble(argX);
+        y = Double.parseDouble(argY);
+        z = Double.parseDouble(argZ);
+        plugin.getLogger().warning("We got parameters: x: ( " + Double.toString(x) + " )");
+        plugin.getLogger().warning("We got parameters: y: ( " + Double.toString(y) + " )");
+        plugin.getLogger().warning("We got parameters: z: ( " + Double.toString(z) + " )");
+
+        locationReturn = new Location(world, x, y, z);
+        plugin.getLogger().warning("locationReturn: ( " + locationReturn.toString() + " )");
+
+        return locationReturn;
     }
 
     // create a cuboid of lots of blocks
@@ -3199,13 +3615,31 @@ public class RemoteSession {
         return (result.toString());
     }
 
+    private String getEntities() {
+        plugin.getLogger().warning("Inside getEntities: ()");
+
+        StringBuilder result = new StringBuilder();
+
+        World world = origin.getWorld();
+
+        Integer entityCount = 0;
+        for (org.bukkit.entity.Entity e : world.getEntities()) { // we get all of the entities in the world - expensive
+            if (e.getType().isSpawnable()) {
+                entityCount++;
+                    result.append(getEntityMsg(e));
+            }
+        }
+        plugin.getLogger().warning("Entities processed: " + Integer.toString(entityCount));
+        return (result.toString());
+    }
+
     private String getEntities(Location pos1, Location pos2) {
         // DG Want to find all entities in the cuboid from pos1 to pos2
         // Decided that looping through all entities and then looping from all x, y and z
         // in the cuboid would be too expensive so have created a set of the locations
         // in pos1 -> pos2 and will loop through entities and check if their location is
         // in the set
-        plugin.getLogger().warning("getEntities: (" + pos1.toString() + ", " + pos2.toString() + ")");
+        plugin.getLogger().warning("Insde getEntities: (" + pos1.toString() + ", " + pos2.toString() + ")");
 
         StringBuilder result = new StringBuilder();
         World world = pos1.getWorld();
