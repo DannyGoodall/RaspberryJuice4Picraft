@@ -3004,6 +3004,10 @@ public class RemoteSession {
                 long longParameter, longReturn;
                 TreeType treeTypeParameter, treeTypeReturn;
                 LivingEntity livingEntityParameter, liveEntityReturn;
+                AnimalTamer animalTamerParameter, animalTamerReturn;
+                Horse.Color horseColorParameter, horseColorReturn;
+                Horse.Style horseStyleParameter, horseStyleReturn;
+
 
                 // Here we have a method signature
                 plugin.getLogger().warning("We have a method Signature: (" + methodSignature + ")");
@@ -3147,6 +3151,50 @@ public class RemoteSession {
                         plugin.getLogger().warning("entityParameter: " + entityParameter.toString());
                         methodActual = classRecipient.getMethod(methodName, LivingEntity.class);
                         methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, entityParameter);
+                        break;
+                    case "AnimalTamer:void":
+                        // getOwner
+                        methodActual = classRecipient.getMethod(methodName);
+                        //entityTypeReturn = (EntityType) methodActual.invoke(worldRecipient);
+                        animalTamerReturn = (AnimalTamer) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
+                        send(animalTamerReturn.toString());
+                        break;
+                    case "void:AnimalTamer":
+                        // setOwner
+                        entityID = Integer.parseInt(args[firstArg]);
+                        animalTamerParameter = (AnimalTamer) plugin.getEntity(entityID);
+                        plugin.getLogger().warning("entityID: " + Integer.toString(entityID));
+                        plugin.getLogger().warning("animalTamerParameter: " + animalTamerParameter.toString());
+                        methodActual = classRecipient.getMethod(methodName, AnimalTamer.class);
+                        methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, animalTamerParameter);
+                        break;
+                    case "HorseColor:void":
+                        // getColor
+                        methodActual = classRecipient.getMethod(methodName);
+                        //entityTypeReturn = (EntityType) methodActual.invoke(worldRecipient);
+                        horseColorReturn = (Horse.Color) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
+                        send(horseColorReturn.toString());
+                        break;
+                    case "void:HorseColor":
+                        // setColor
+                        horseColorParameter = Horse.Color.valueOf(args[firstArg].toUpperCase());
+                        plugin.getLogger().warning("horseColorParameter: " + horseColorParameter.toString());
+                        methodActual = classRecipient.getMethod(methodName, Horse.Color.class);
+                        methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, horseColorParameter);
+                        break;
+                    case "HorseStyle:void":
+                        // getStyle
+                        methodActual = classRecipient.getMethod(methodName);
+                        //entityTypeReturn = (EntityType) methodActual.invoke(worldRecipient);
+                        horseStyleReturn = (Horse.Style) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
+                        send(horseStyleReturn.toString());
+                        break;
+                    case "void:HorseStyle":
+                        // setStyle
+                        horseStyleParameter = Horse.Style.valueOf(args[firstArg].toUpperCase());
+                        plugin.getLogger().warning("horseStyleParameter: " + horseStyleParameter.toString());
+                        methodActual = classRecipient.getMethod(methodName, Horse.Style.class);
+                        methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, horseStyleParameter);
                         break;
                     case "void:Entity":
                         // attack
