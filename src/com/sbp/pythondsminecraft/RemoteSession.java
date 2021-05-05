@@ -6,8 +6,9 @@ package com.sbp.pythondsminecraft;
 
 import java.io.BufferedReader;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -15,7 +16,9 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 
-import net.minecraft.server.v1_16_R3.ChunkConverterPalette;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import org.apache.commons.lang.BooleanUtils;
 import org.bukkit.*;
 //import org.bukkit.attribute.Attribute;
@@ -32,6 +35,7 @@ import org.bukkit.entity.*;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.bukkit.potion.PotionEffect;
 import org.bukkit.util.Vector;
 
 
@@ -165,7 +169,72 @@ public class RemoteSession {
     }
 
     protected void handleLine(String line) {
+        // GSON - https://futurestud.io/tutorials/gson-getting-started-with-java-json-serialization-deserialization
+        // HOW TO HANDLE THIS IF IT WERE A JSON ARRAY - TOO BULKY?
+        //
+        // {
+        //  "cmd": "getBlock",
+        //  "sig": "BlockDescriptor:int:int:int",
+        //  "args": [
+        //      250,
+        //      20,
+        //      -2312
+        //  ],
+        // }
+        //
+        // or
+        //
+        // {
+        //  "cmd": "setColor",
+        //  "sig": "void:Color",
+        //  "args": [
+        //      {
+        //          "_name": "SetColor",
+        //          "red": 20,
+        //          "green": 220,
+        //          "blue": 92,
+        //      }
+        //  ]
+        // }
+
+        plugin.getLogger().warning("handleLine: Got: " + line);
+        // Let's try to convert the line to JSON and if it fails we assume we've got an old style call
+        // Is this expensive? Should I just test for a { as the first char of the string? #TODO
+        // https://howtodoinjava.com/gson/gson-jsonparser/
+        if (line.startsWith("{")) {
+            Gson gson = new Gson();
+            try {
+                PythonCommand pythonCommand = gson.fromJson(line, PythonCommand.class);
+                PyComplex pyComplex = new PyComplex(plugin, this);
+                pyComplex.handleCommand(pythonCommand);
+                plugin.getLogger().warning("handleLine: Converted: " + pythonCommand.toString());
+            } catch (IllegalStateException | JsonSyntaxException e) {
+                plugin.getLogger().warning("An error occurred whilst parsing the JSON command: " + line);
+                e.printStackTrace();
+                send("Fail");
+            } catch (InvocationTargetException e) {
+                e.printStackTrace();
+            } catch (NoSuchMethodException e) {
+                e.printStackTrace();
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
+        } else {
+            // We don't have a JSON line - process on old / standard basis
+            String methodName = line.substring(0, line.indexOf("("));
+            //split string into args, handles , inside " i.e. ","
+            String[] args = line.substring(line.indexOf("(") + 1, line.length() - 1).split(",");
+            //System.out.println(methodName + ":" + Arrays.toString(args));
+
+            handleCommand(methodName, args);
+
+        }
+    }
+
+    protected void handleLineOLD(String line) {
         //System.out.println("ligne de commande : " + line);
+        //
+
         String methodName = line.substring(0, line.indexOf("("));
         //split string into args, handles , inside " i.e. ","
         String[] args = line.substring(line.indexOf("(") + 1, line.length() - 1).split(",");
@@ -2076,7 +2145,7 @@ public class RemoteSession {
                         gotMethod = classRecipient.getMethod(methodName);
                         plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
                         boolReturn = (boolean) gotMethod.invoke(classRecipient.cast(blockData));
-                        send(boolReturn.toString());
+                        send(Boolean.toString(boolReturn));
                         break;
                     case "void:boolean":
                         // Used for setState() type of calls
@@ -2185,7 +2254,7 @@ public class RemoteSession {
                         plugin.getLogger().warning("gotMethod: " + gotMethod.toString());
                         plugin.getLogger().warning("blockFace: " + blockFaceValue.toString());
                         boolReturn = (boolean) gotMethod.invoke(classRecipient.cast(blockData), blockFaceValue);
-                        send(boolReturn.toString());
+                        send(Boolean.toString(boolReturn));
                         break;
                     case "void:BlockFace":
                         // Used for setLeaves in Bamboo
@@ -2612,7 +2681,7 @@ public class RemoteSession {
                         boolReturn = (boolean) gotMethod.invoke(classRecipient.cast(blockData), intValue);
                         // Now associate the block data with the block
                         blockRecipient.setBlockData(blockData);
-                        send(boolReturn.toString());
+                        send(Boolean.toString(boolReturn));
                         break;
                     case "SetOfInt:void":
                         // Used for brewing stand
@@ -2772,22 +2841,25 @@ public class RemoteSession {
                     switch (methodSignature) {
 
                         case "void:void":
+                            // OK
                             // setHealth
                             methodActual = classRecipient.getMethod(methodName);
                             methodActual.invoke(entityRecipient);
                             break;
                         case "void:double":
+                            // OK
                             // setHealth
                             methodActual = classRecipient.getMethod(methodName, double.class);
                             doubleReturn = Double.parseDouble(args[2]);
                             methodActual.invoke(entityRecipient, doubleReturn);
                             break;
-                        case "Double:void":
-                            // getHealth
-                            methodActual = classRecipient.getMethod(methodName);
-                            doubleReturn = (Double) methodActual.invoke(entityRecipient);
-                            send(doubleReturn.toString());
-                            break;
+//                        case "Double:void":
+//                            // OK
+//                            // getHealth
+//                            methodActual = classRecipient.getMethod(methodName);
+//                            doubleReturn = (Double) methodActual.invoke(entityRecipient);
+//                            send(doubleReturn.toString());
+//                            break;
                         case "double:void":
                             // getHeight
                             // Is this needed (i.e. double and Double?)
@@ -2796,24 +2868,28 @@ public class RemoteSession {
                             send(Double.toString(doubleReturn2));
                             break;
                         case "boolean:void":
+                            // OK
                             // getHealth
                             methodActual = classRecipient.getMethod(methodName);
                             boolReturn = (boolean) methodActual.invoke(entityRecipient);
                             send(boolReturn.toString());
                             break;
                         case "void:boolean":
+                            // OK
                             // setHealth
                             methodActual = classRecipient.getMethod(methodName, boolean.class);
                             boolReturn = (boolean) BooleanUtils.toBoolean(args[2]);
                             methodActual.invoke(entityRecipient, boolReturn);
                             break;
                         case "int:void":
+                            // OK
                             // getHealth
                             methodActual = classRecipient.getMethod(methodName);
                             intReturn = (int) methodActual.invoke(entityRecipient);
                             send(intReturn.toString());
                             break;
                         case "void:int":
+                            // OK
                             // setHealth
                             methodActual = classRecipient.getMethod(methodName, int.class);
                             intReturn = (int) Integer.parseInt(args[2]);
@@ -2882,13 +2958,12 @@ public class RemoteSession {
                             send(boolReturn.toString());
                             break;
                         case "Strings:void":
-                            // getHealth
                             methodActual = classRecipient.getMethod(methodName);
                             stringsReturn = (Set<String>) methodActual.invoke(entityRecipient);
                             send(stringsReturn.toString());
                             break;
                         case "BlockFace:void":
-                            // getHealth
+                            //OK
                             methodActual = classRecipient.getMethod(methodName);
                             blockfaceReturn = (BlockFace) methodActual.invoke(entityRecipient);
                             send(blockfaceReturn.toString());
@@ -3007,75 +3082,77 @@ public class RemoteSession {
                 AnimalTamer animalTamerParameter, animalTamerReturn;
                 Horse.Color horseColorParameter, horseColorReturn;
                 Horse.Style horseStyleParameter, horseStyleReturn;
-
+                String serializedObject, serializedObjectReturn;
+                PotionEffect potionEffectParameter, potionEffectReturn;
+                boolean booleanParameter;
+                Color colorParameter, colorReturn;
 
                 // Here we have a method signature
                 plugin.getLogger().warning("We have a method Signature: (" + methodSignature + ")");
                 switch (methodSignature) {
 
                     case "void:void":
-                        // setHealth
+                        // OK
                         methodActual = classRecipient.getMethod(methodName);
                         //methodActual.invoke(worldRecipient);
                         methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
                         break;
                     case "void:double":
-                        // setHealth
+                        // OK
                         methodActual = classRecipient.getMethod(methodName, double.class);
                         doubleReturn = Double.parseDouble(args[firstArg]);
                         //methodActual.invoke(worldRecipient, doubleReturn);
                         methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, doubleReturn);
                         break;
-                    case "Double:void":
-                        // getHealth
-                        methodActual = classRecipient.getMethod(methodName);
-                        //doubleReturn = (Double) methodActual.invoke(worldRecipient);
-                        doubleReturn = (Double) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
-                        send(doubleReturn.toString());
-                        break;
+//                    case "Double:void":
+//                        // getHealth
+//                        methodActual = classRecipient.getMethod(methodName);
+//                        //doubleReturn = (Double) methodActual.invoke(worldRecipient);
+//                        doubleReturn = (Double) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
+//                        send(doubleReturn.toString());
+//                        break;
                     case "double:void":
-                        // getHeight
-                        // Is this needed (i.e. double and Double?)
+                        // OK
                         methodActual = classRecipient.getMethod(methodName);
                         //doubleReturn2 = (double) methodActual.invoke(worldRecipient);
                         doubleReturn2 = (double) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
                         send(Double.toString(doubleReturn2));
                         break;
                     case "boolean:void":
-                        // getHealth
+                        // OK
                         methodActual = classRecipient.getMethod(methodName);
                         //boolReturn = (boolean) methodActual.invoke(worldRecipient);
                         boolReturn = (boolean) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
                         send(boolReturn.toString());
                         break;
                     case "void:boolean":
-                        // setHealth
+                        // OK
                         methodActual = classRecipient.getMethod(methodName, boolean.class);
                         boolReturn = (boolean) BooleanUtils.toBoolean(args[firstArg]);
                         //methodActual.invoke(worldRecipient, boolReturn);
                         methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, boolReturn);
                         break;
                     case "string:void":
-                        // getHealth
+                        // OK
                         methodActual = classRecipient.getMethod(methodName);
                         //boolReturn = (boolean) methodActual.invoke(worldRecipient);
                         stringReturn = (String) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
                         send(stringReturn);
                         break;
                     case "void:string":
-                        // setHealth
+                        // OK
                         methodActual = classRecipient.getMethod(methodName, String.class);
                         methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, args[firstArg]);
                         break;
                     case "int:void":
-                        // getHealth
+                        // OK
                         methodActual = classRecipient.getMethod(methodName);
                         //intReturn = (int) methodActual.invoke(worldRecipient);
                         intReturn = (int) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
                         send(intReturn.toString());
                         break;
                     case "void:int":
-                        // setHealth
+                        // OK
                         methodActual = classRecipient.getMethod(methodName, int.class);
                         intReturn = (int) Integer.parseInt(args[firstArg]);
                         //methodActual.invoke(worldRecipient, intReturn);
@@ -3284,7 +3361,7 @@ public class RemoteSession {
                                 origin.getWorld()
                         );
 
-                        treeTypeParameter = TreeType.valueOf(args[firstArg+3].toUpperCase());
+                        treeTypeParameter = TreeType.valueOf(args[firstArg + 3].toUpperCase());
                         plugin.getLogger().warning("treeTypeParameter: ( " + treeTypeParameter.toString() + " )");
 
                         methodActual = classRecipient.getMethod(methodName, Location.class, TreeType.class);
@@ -3338,12 +3415,56 @@ public class RemoteSession {
                         //methodActual.invoke(worldRecipient, vectorReturn);
                         methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, vectorReturn);
                         break;
-                    case "void:Float":
+                    case "float:void":
+                        // getWalkSpeed
+                        methodActual = classRecipient.getMethod(methodName);
+                        //vectorReturn = (Vector) methodActual.invoke(worldRecipient);
+                        floatReturn = (float) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
+                        send(Float.toString(floatReturn));
+                        break;
+                    case "void:float":
                         // getRotation
                         methodActual = classRecipient.getMethod(methodName, float.class);
                         floatParamter = (float) Float.parseFloat(args[firstArg]);
                         //methodActual.invoke(worldRecipient, floatParamter);
                         methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, floatParamter);
+                        break;
+                    case "boolean:PotionEffect":
+                        methodActual = classRecipient.getMethod(methodName, PotionEffect.class);
+                        serializedObject = args[firstArg];
+                        plugin.getLogger().warning("We got: " + serializedObject);
+                        potionEffectParameter = (PotionEffect) new PyHelper().toPotionEffect(serializedObject);
+                        plugin.getLogger().warning("As object: " + potionEffectParameter.toString());
+                        booleanReturn = (boolean) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, potionEffectParameter);
+                        plugin.getLogger().warning("Returning: " + Boolean.toString(booleanReturn));
+                        send(booleanReturn);
+                        break;
+                    case "boolean:PotionEffect:boolean":
+                        methodActual = classRecipient.getMethod(methodName, PotionEffect.class, boolean.class);
+                        serializedObject = args[firstArg];
+                        booleanParameter = BooleanUtils.toBoolean(args[firstArg + 1]);
+
+                        plugin.getLogger().warning("We got: " + serializedObject);
+                        potionEffectParameter = (PotionEffect) new PyHelper().toPotionEffect(serializedObject);
+                        plugin.getLogger().warning("As object: " + potionEffectParameter.toString());
+                        booleanReturn = (boolean) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, potionEffectParameter, booleanParameter);
+                        plugin.getLogger().warning("Returning: " + Boolean.toString(booleanReturn));
+                        send(booleanReturn);
+                    case "Color:void":
+                        // getColor (AreaEffectCloud)
+                        methodActual = classRecipient.getMethod(methodName);
+                        //vectorReturn = (Vector) methodActual.invoke(worldRecipient);
+                        colorReturn = (Color) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
+                        send(colorReturn.toString());
+                        break;
+                    //PotionType.AWKWARD
+                    case "void:Color":
+                        // setColor (AreaEffectCloud)
+                        methodActual = classRecipient.getMethod(methodName, Color.class);
+                        serializedObject = args[firstArg];
+                        plugin.getLogger().warning("We got: " + serializedObject);
+                        colorParameter = (Color) new PyHelper().toColor(serializedObject.getBytes(StandardCharsets.UTF_8));
+                        methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, colorParameter);
                         break;
                     default:
                         plugin.getLogger().warning("Didn't find the correct method signature for[" + methodSignature + "]");
@@ -3674,7 +3795,7 @@ public class RemoteSession {
         for (org.bukkit.entity.Entity e : world.getEntities()) { // we get all of the entities in the world - expensive
             if (e.getType().isSpawnable()) {
                 entityCount++;
-                    result.append(getEntityMsg(e));
+                result.append(getEntityMsg(e));
             }
         }
         plugin.getLogger().warning("Entities processed: " + Integer.toString(entityCount));
@@ -3973,6 +4094,7 @@ public class RemoteSession {
                 e.printStackTrace();
             }
         }
+
     }
 
     /**
