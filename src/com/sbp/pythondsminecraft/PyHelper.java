@@ -9,6 +9,7 @@ import org.bukkit.World;
 import org.bukkit.potion.PotionEffect;
 import org.apache.commons.lang.BooleanUtils;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.util.Vector;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -60,6 +61,18 @@ class PythonCommand {
         return intReturn;
     }
 
+    public long argToLong(int index) {
+        JsonElement jsonElement = argToJSONElement(index);
+        long longReturn = jsonElement.getAsLong();
+        return longReturn;
+    }
+
+    public float argToFloat(int index) {
+        JsonElement jsonElement = argToJSONElement(index);
+        float floatReturn = jsonElement.getAsFloat();
+        return floatReturn;
+    }
+
     public double argToDouble(int index) {
         JsonElement jsonElement = argToJSONElement(index);
         double doubleReturn = jsonElement.getAsDouble();
@@ -87,12 +100,20 @@ class PythonCommand {
     }
 
     public Location argToLocation(int index, World world) {
-        getLogger().warning("argToLocation: Got index: " + index + " world: "+world);
+        //getLogger().warning("argToLocation: Got index: " + index + " world: "+world);
         PyLocation locationParameter = gson.fromJson((String) args.get(index), PyLocation.class);
-        getLogger().warning("argToLocation: Got locationParameter: " + locationParameter.toString());
+        //getLogger().warning("argToLocation: Got locationParameter: " + locationParameter.toString());
 
         Location location = locationParameter.toLocation(world);
         return location;
+    }
+
+    public Vector argToVector(int index) {
+        PyLocation locationParameter = gson.fromJson((String) args.get(index), PyLocation.class);
+        getLogger().warning("argToLocation: Got locationParameter: " + locationParameter.toString());
+
+        Vector vector = locationParameter.toVector();
+        return vector;
     }
 
     public PyLocation getThingLocation() {
@@ -142,11 +163,17 @@ class PyColor extends PySerializedObject {
 
 class PyLocation extends PySerializedObject {
     public String _name = "MCLocation";
-    public int x = 0;
-    public int y = 0;
-    public int z = 0;
+    public double x = 0;
+    public double y = 0;
+    public double z = 0;
 
     PyLocation(int x, int y, int z) {
+        this.x = (double) x;
+        this.y = (double) y;
+        this.z = (double) z;
+    }
+
+    PyLocation(double x, double y, double z) {
         this.x = x;
         this.y = y;
         this.z = z;
@@ -158,13 +185,36 @@ class PyLocation extends PySerializedObject {
         this.z = location.getBlockZ();
     }
 
+    PyLocation(Vector vector) {
+        this.x = vector.getX();
+        this.y = vector.getY();
+        this.z = vector.getZ();
+    }
+
     public String toString() {
         return "PyLocation(" + this.x + "," + this.y + "," + this.z + ")";
     }
 
-    Location toLocation(World world) {
+    public Location toLocation(World world) {
         return new Location(world, (double) this.x, (double) this.y, (double) this.z);
     }
+
+    public Vector toVector(){
+        return new Vector(this.x, this.y, this.z);
+    }
+
+    public int getBlockX(){
+        return (int) this.x;
+    }
+
+    public int getBlockY(){
+        return (int) this.y;
+    }
+
+    public int getBlockZ(){
+        return (int) this.z;
+    }
+
 }
 
 public class PyHelper {

@@ -1,5 +1,7 @@
 package com.sbp.pythondsminecraft;
 
+import net.minecraft.server.v1_16_R3.HorseColor;
+import net.minecraft.server.v1_16_R3.HorseStyle;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -8,11 +10,12 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.FaceAttachable;
 import org.bukkit.block.data.Rail;
 import org.bukkit.block.data.type.*;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.EntityType;
+import org.bukkit.entity.*;
+import org.bukkit.util.Vector;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.Set;
 import java.util.UUID;
 
@@ -73,7 +76,7 @@ public class PyComplex {
         switch (iam) {
             case "block" -> {
                 PyLocation pyLocation = pythonCommand.getThingLocation();
-                blockRecipient = world.getBlockAt(pyLocation.x, pyLocation.y, pyLocation.z);
+                blockRecipient = world.getBlockAt(pyLocation.getBlockX(), pyLocation.getBlockY(), pyLocation.getBlockZ());
                 blockData = blockRecipient.getBlockData();
                 classRecipient = blockRecipient.getType().data;
                 plugin.getLogger().warning("BLOCK");
@@ -206,7 +209,27 @@ public class PyComplex {
             case "Location" -> {
                 methodToUse = classRecipient.getMethod(pythonCommand.method, Location.class);
             }
-
+            case "LivingEntity" -> {
+                methodToUse = classRecipient.getMethod(pythonCommand.method, LivingEntity.class);
+            }
+            case "long" -> {
+                methodToUse = classRecipient.getMethod(pythonCommand.method, long.class);
+            }
+            case "AnimalTamer" -> {
+                methodToUse = classRecipient.getMethod(pythonCommand.method, AnimalTamer.class);
+            }
+            case "HorseColor" -> {
+                methodToUse = classRecipient.getMethod(pythonCommand.method, HorseColor.class);
+            }
+            case "HorseStyle" -> {
+                methodToUse = classRecipient.getMethod(pythonCommand.method, HorseStyle.class);
+            }
+            case "Location:TreeType" -> {
+                methodToUse = classRecipient.getMethod(pythonCommand.method, Location.class, TreeType.class);
+            }
+            case "float" -> {
+                methodToUse = classRecipient.getMethod(pythonCommand.method, float.class);
+            }
         }
         plugin.getLogger().warning("methodToUse: " + methodToUse);
 
@@ -683,6 +706,149 @@ public class PyComplex {
                 );
                 sendLocation(locationReturn);
             }
+            case "long:void" -> {
+                long longReturn = (long) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient
+                );
+                sendLong(longReturn);
+            }
+            case "void:long" -> {
+                long longParameter = (long) pythonCommand.argToLong(0);
+                methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        longParameter
+                );
+            }
+            case "LivingEntity:void" -> {
+                LivingEntity livingEntityReturn = (LivingEntity) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient
+                );
+                sendLivingEntity(livingEntityReturn);
+            }
+            case "void:LivingEntity" -> {
+                int intParameter = (int) pythonCommand.argToInteger(0);
+                LivingEntity livingEntity = (LivingEntity) plugin.getEntity(intParameter);
+                methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        livingEntity
+                );
+            }
+            case "AnimalTamer:void" -> {
+                // NEEDS TESTING - ANIMAL TAMER DOESN'T PRESENT a getEntityID() method - is it derived from Entity?
+                AnimalTamer animalTamerReturn = (AnimalTamer) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient
+                );
+                sendAnimalTamer(animalTamerReturn);
+            }
+            case "void:AnimalTamer" -> {
+                // NEEDS TESTING - ANIMAL TAMER DOESN'T PRESENT a getEntityID() method - is it derived from Entity?
+                int intParameter = (int) pythonCommand.argToInteger(0);
+                AnimalTamer animalTamer = (AnimalTamer) plugin.getEntity(intParameter);
+                methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        animalTamer
+                );
+            }
+            case "HorseColor:void" -> {
+                HorseColor horseColor = (HorseColor) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient
+                );
+                sendHorseColor(horseColor);
+            }
+            case "void:HorseColor" -> {
+                String stringParameter = (String) pythonCommand.argToStringUpper(0);
+                HorseColor horseColor = (HorseColor) HorseColor.valueOf(stringParameter);
+                methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        horseColor
+                );
+            }
+            case "HorseStyle:void" -> {
+                HorseStyle horseStyle = (HorseStyle) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient
+                );
+                sendHorseStyle(horseStyle);
+            }
+            case "void:HorseStyle" -> {
+                String stringParameter = (String) pythonCommand.argToStringUpper(0);
+                HorseStyle horseStyle = (HorseStyle) HorseStyle.valueOf(stringParameter);
+                methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        horseStyle
+                );
+            }
+            case "Entity:void" -> {
+                Entity entityReturn = (Entity) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient
+                );
+                sendEntity(entityReturn);
+            }
+            case "void:Entity" -> {
+                int intParameter = (int) pythonCommand.argToInteger(0);
+                Entity entity = (Entity) plugin.getEntity(intParameter);
+                methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        entity
+                );
+            }
+            case "LightningStrike:Location" -> {
+                Location locationParameter = (Location) pythonCommand.argToLocation(0, world);
+                LightningStrike lightningStrike = (LightningStrike) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        locationParameter
+                );
+                sendLightningString(lightningStrike);
+            }
+            case "boolean:Location:TreeType" -> {
+                Location locationParameter = (Location) pythonCommand.argToLocation(0, world);
+                String stringParameter = (String) pythonCommand.argToStringUpper(1);
+                TreeType treeType = (TreeType) TreeType.valueOf(stringParameter);
+
+                boolean booleanReturn = (boolean) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        locationParameter,
+                        treeType
+                );
+                sendBoolean(booleanReturn);
+            }
+            case "Strings:void" -> {
+                String[] stringsReturn = (String[]) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient
+                );
+                sendStrings(stringsReturn);
+            }
+            case "StringSet:void" -> {
+                Set<String> stringSet = (Set<String>) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient
+                );
+                sendStringSet(stringSet);
+            }
+            case "Vector:void" -> {
+                Vector vector = (Vector) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient
+                );
+                sendVector(vector);
+            }
+            case "void:Vector" -> {
+                Vector vectorParameter = pythonCommand.argToVector(0);
+                methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        vectorParameter
+                );
+            }
+            case "float:void" -> {
+                float floatReturn = (float) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient
+                );
+                sendFloat(floatReturn);
+            }
+            case "void:float" -> {
+                float floatParameter = pythonCommand.argToFloat(0);
+                methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        floatParameter
+                );
+            }
             default -> {
                 plugin.getLogger().warning("Didn't find the correct method signature for[" + pythonCommand.signature + "]");
             }
@@ -701,12 +867,29 @@ public class PyComplex {
         session.send(Integer.toString(i));
     }
 
+    public void sendLong(long l) {
+        session.send(Long.toString(l));
+    }
+
+    public void sendFloat(float f) {
+        session.send(Float.toString(f));
+    }
+
     public void sendDouble(double d) {
         session.send(Double.toString(d));
     }
 
     public void sendString(String s) {
         session.send(s);
+    }
+
+    public void sendStrings(String[] s) {
+        session.send(Arrays.toString(s));
+    }
+
+    public void sendStringSet(Set<String> s) {
+        session.send(s.toString());
+        Location l;
     }
 
     public void sendBambooLeaves(Bamboo.Leaves l) {
@@ -739,16 +922,52 @@ public class PyComplex {
         session.send(pyLocation.toJson());
     }
 
+    public void sendVector(Vector vector) {
+        PyLocation pyLocation = new PyLocation(vector);
+        session.send(pyLocation.toJson());
+    }
+
     public void sendDyeColor(DyeColor dyeColor) {
         session.send(dyeColor.toString());
+    }
+
+    public void sendHorseColor(HorseColor horseColor) {
+        session.send(horseColor.toString());
+    }
+
+    public void sendHorseStyle(HorseStyle horseStyle) {
+        session.send(horseStyle.toString());
     }
 
     public void sendUUID(UUID uuid) {
         session.send(uuid.toString());
     }
 
+    public void sendLightningString(LightningStrike lightningStrike) {
+        session.send(lightningStrike.toString());
+    }
+
     public void sendEntityType(EntityType entityType) {
         session.send(entityType.toString());
+    }
+
+    public void sendEntity(Entity entity){
+        //Send back the entity ID
+        int entityID = entity.getEntityId();
+        session.send(Integer.toString(entityID));
+    }
+
+    public void sendLivingEntity(LivingEntity livingEntity){
+        //Send back the entity ID
+        int entityID = livingEntity.getEntityId();
+        session.send(Integer.toString(entityID));
+    }
+
+    public void sendAnimalTamer(AnimalTamer animalTamer){
+        //Send back the entity ID
+        Entity e = (Entity) animalTamer;
+        int entityID = e.getEntityId();
+        session.send(Integer.toString(entityID));
     }
 
 }

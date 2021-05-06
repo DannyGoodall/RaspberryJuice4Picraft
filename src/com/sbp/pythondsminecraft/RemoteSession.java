@@ -36,6 +36,7 @@ import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 
 
@@ -3159,41 +3160,41 @@ public class RemoteSession {
                         methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, intReturn);
                         break;
                     case "long:void":
-                        // getHealth
+                        // OK
                         methodActual = classRecipient.getMethod(methodName);
                         longReturn = (long) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
                         send(Long.toString(longReturn));
                         break;
                     case "void:long":
-                        // setHealth
+                        // OK
                         methodActual = classRecipient.getMethod(methodName, long.class);
                         longParameter = (long) Long.parseLong(args[firstArg]);
                         //methodActual.invoke(worldRecipient, intReturn);
                         methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, longParameter);
                         break;
                     case "DyeColor:void":
-                        // getHealth
+                        // OK
                         methodActual = classRecipient.getMethod(methodName);
                         //dyeColorReturn = (DyeColor) methodActual.invoke(worldRecipient);
                         dyeColorReturn = (DyeColor) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
                         send(dyeColorReturn.toString());
                         break;
                     case "void:DyeColor":
-                        // setHealth
+                        // OK
                         methodActual = classRecipient.getMethod(methodName, DyeColor.class);
                         dyeColorReturn = DyeColor.valueOf(args[firstArg]);
                         //methodActual.invoke(worldRecipient, dyeColorReturn);
                         methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, dyeColorReturn);
                         break;
                     case "UUID:void":
-                        // getHealth
+                        // OK
                         methodActual = classRecipient.getMethod(methodName);
                         //uuidReturn = (UUID) methodActual.invoke(worldRecipient);
                         uuidReturn = (UUID) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
                         send(uuidReturn.toString());
                         break;
                     case "void:UUID":
-                        // setHealth
+                        // OK
                         methodActual = classRecipient.getMethod(methodName, UUID.class);
                         uuidReturn = UUID.fromString(args[firstArg]);
                         //methodActual.invoke(worldRecipient, uuidReturn);
@@ -3207,21 +3208,21 @@ public class RemoteSession {
 //                        send(entityTypeReturn.toString());
 //                        break;
                     case "EntityType:void":
-                        // getHealth
+                        // OK
                         methodActual = classRecipient.getMethod(methodName);
                         //entityTypeReturn = (EntityType) methodActual.invoke(worldRecipient);
                         entityTypeReturn = (EntityType) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
                         send(entityTypeReturn.toString());
                         break;
                     case "LivingEntity:void":
-                        // getTarget
+                        // OK
                         methodActual = classRecipient.getMethod(methodName);
                         //entityTypeReturn = (EntityType) methodActual.invoke(worldRecipient);
                         liveEntityReturn = (LivingEntity) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
                         send(liveEntityReturn.toString());
                         break;
                     case "void:LivingEntity":
-                        // setTarget
+                        // OK
                         entityID = Integer.parseInt(args[firstArg]);
                         entityParameter = plugin.getEntity(entityID);
                         plugin.getLogger().warning("entityID: " + Integer.toString(entityID));
@@ -3230,14 +3231,14 @@ public class RemoteSession {
                         methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, entityParameter);
                         break;
                     case "AnimalTamer:void":
-                        // getOwner
+                        // OK
                         methodActual = classRecipient.getMethod(methodName);
                         //entityTypeReturn = (EntityType) methodActual.invoke(worldRecipient);
                         animalTamerReturn = (AnimalTamer) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
                         send(animalTamerReturn.toString());
                         break;
                     case "void:AnimalTamer":
-                        // setOwner
+                        // OK
                         entityID = Integer.parseInt(args[firstArg]);
                         animalTamerParameter = (AnimalTamer) plugin.getEntity(entityID);
                         plugin.getLogger().warning("entityID: " + Integer.toString(entityID));
@@ -3260,14 +3261,14 @@ public class RemoteSession {
                         methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, horseColorParameter);
                         break;
                     case "HorseStyle:void":
-                        // getStyle
+                        // OK
                         methodActual = classRecipient.getMethod(methodName);
                         //entityTypeReturn = (EntityType) methodActual.invoke(worldRecipient);
                         horseStyleReturn = (Horse.Style) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
                         send(horseStyleReturn.toString());
                         break;
                     case "void:HorseStyle":
-                        // setStyle
+                        // OK
                         horseStyleParameter = Horse.Style.valueOf(args[firstArg].toUpperCase());
                         plugin.getLogger().warning("horseStyleParameter: " + horseStyleParameter.toString());
                         methodActual = classRecipient.getMethod(methodName, Horse.Style.class);
@@ -3283,7 +3284,7 @@ public class RemoteSession {
                         methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, entityParameter);
                         break;
                     case "boolean:Entity":
-                        // addPassenger
+                        // OK
                         entityID = Integer.parseInt(args[firstArg]);
                         entityParameter = plugin.getEntity(entityID);
                         methodActual = classRecipient.getMethod(methodName, Entity.class);
@@ -3292,7 +3293,7 @@ public class RemoteSession {
                         send(boolReturn.toString());
                         break;
                     case "boolean:String":
-                        // addScoreboardTag
+                        // OK
                         stringParameter = args[firstArg];
                         methodActual = classRecipient.getMethod(methodName, String.class);
                         //boolReturn = (boolean) methodActual.invoke(worldRecipient, args[firstArg]);
@@ -3300,7 +3301,7 @@ public class RemoteSession {
                         send(boolReturn.toString());
                         break;
                     case "boolean:Location":
-                        // addScoreboardTag
+                        // OK
                         x = Double.parseDouble(args[firstArg]);
                         y = Double.parseDouble(args[firstArg + 1]);
                         z = Double.parseDouble(args[firstArg + 2]);
@@ -3318,7 +3319,7 @@ public class RemoteSession {
                         send(boolReturn.toString());
                         break;
                     case "void:Location":
-                        // setSpawnLocation
+                        // OK
                         x = Double.parseDouble(args[firstArg]);
                         y = Double.parseDouble(args[firstArg + 1]);
                         z = Double.parseDouble(args[firstArg + 2]);
@@ -3334,7 +3335,7 @@ public class RemoteSession {
                         methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, locationReturn);
                         break;
                     case "LightningStrike:Location":
-                        // addScoreboardTag
+                        // OK
                         x = Double.parseDouble(args[firstArg]);
                         y = Double.parseDouble(args[firstArg + 1]);
                         z = Double.parseDouble(args[firstArg + 2]);
@@ -3353,7 +3354,7 @@ public class RemoteSession {
                         send(lightningStrike.toString());
                         break;
                     case "boolean:Location:TreeType":
-                        // generateTree
+                        // OK
                         locationParameter = toLocation(
                                 args[firstArg],
                                 args[firstArg + 1],
@@ -3371,42 +3372,42 @@ public class RemoteSession {
                         send(boolReturn.toString());
                         break;
                     case "Strings:void":
-                        // getHealth
+                        // OK
                         methodActual = classRecipient.getMethod(methodName);
                         //stringsReturn = (Set<String>) methodActual.invoke(worldRecipient);
                         stringsReturn = (String[]) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
                         send(Arrays.toString(stringsReturn));
                         break;
                     case "StringSet:void":
-                        // getHealth
+                        // OK
                         methodActual = classRecipient.getMethod(methodName);
                         //stringsReturn = (Set<String>) methodActual.invoke(worldRecipient);
                         stringSetReturn = (Set<String>) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
                         send(stringSetReturn.toString());
                         break;
                     case "BlockFace:void":
-                        // getHealth
+                        // OK
                         methodActual = classRecipient.getMethod(methodName);
                         //blockfaceReturn = (BlockFace) methodActual.invoke(worldRecipient);
                         blockfaceReturn = (BlockFace) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
                         send(blockfaceReturn.toString());
                         break;
                     case "Location:void":
-                        // getHealth
+                        // OK
                         methodActual = classRecipient.getMethod(methodName);
                         //locationReturn = (Location) methodActual.invoke(worldRecipient);
                         locationReturn = (Location) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
                         send(locationReturn.toString());
                         break;
                     case "Vector:void":
-                        // getVelocity
+                        // OK
                         methodActual = classRecipient.getMethod(methodName);
                         //vectorReturn = (Vector) methodActual.invoke(worldRecipient);
                         vectorReturn = (Vector) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
                         send(vectorReturn.toString());
                         break;
                     case "void:Vector":
-                        // setVelocity
+                        // OK
                         methodActual = classRecipient.getMethod(methodName, Vector.class);
                         x = (double) Double.parseDouble(args[firstArg]);
                         y = (double) Double.parseDouble(args[firstArg + 1]);
@@ -3423,13 +3424,14 @@ public class RemoteSession {
                         send(Float.toString(floatReturn));
                         break;
                     case "void:float":
-                        // getRotation
+                        // OK
                         methodActual = classRecipient.getMethod(methodName, float.class);
                         floatParamter = (float) Float.parseFloat(args[firstArg]);
                         //methodActual.invoke(worldRecipient, floatParamter);
                         methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, floatParamter);
                         break;
                     case "boolean:PotionEffect":
+                        //
                         methodActual = classRecipient.getMethod(methodName, PotionEffect.class);
                         serializedObject = args[firstArg];
                         plugin.getLogger().warning("We got: " + serializedObject);
@@ -3440,6 +3442,7 @@ public class RemoteSession {
                         send(booleanReturn);
                         break;
                     case "boolean:PotionEffect:boolean":
+                        //
                         methodActual = classRecipient.getMethod(methodName, PotionEffect.class, boolean.class);
                         serializedObject = args[firstArg];
                         booleanParameter = BooleanUtils.toBoolean(args[firstArg + 1]);
@@ -3451,7 +3454,7 @@ public class RemoteSession {
                         plugin.getLogger().warning("Returning: " + Boolean.toString(booleanReturn));
                         send(booleanReturn);
                     case "Color:void":
-                        // getColor (AreaEffectCloud)
+                        // OK
                         methodActual = classRecipient.getMethod(methodName);
                         //vectorReturn = (Vector) methodActual.invoke(worldRecipient);
                         colorReturn = (Color) methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient);
@@ -3459,7 +3462,7 @@ public class RemoteSession {
                         break;
                     //PotionType.AWKWARD
                     case "void:Color":
-                        // setColor (AreaEffectCloud)
+                        // OK
                         methodActual = classRecipient.getMethod(methodName, Color.class);
                         serializedObject = args[firstArg];
                         plugin.getLogger().warning("We got: " + serializedObject);
