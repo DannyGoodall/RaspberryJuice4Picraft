@@ -3,17 +3,26 @@ package com.sbp.pythondsminecraft;
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.reflect.TypeToken;
 import org.bukkit.Color;
 import org.bukkit.Location;
+import org.bukkit.Particle;
 import org.bukkit.World;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Villager;
+import org.bukkit.metadata.FixedMetadataValue;
+import org.bukkit.metadata.MetadataValue;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffect;
 import org.apache.commons.lang.BooleanUtils;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.potion.PotionType;
 import org.bukkit.util.Vector;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
+import java.util.*;
 
 import static org.bukkit.Bukkit.getLogger;
 
@@ -29,9 +38,9 @@ class PythonCommand {
 
     Gson gson = new Gson();
 
-    public JsonElement argToJSONElement(int index){
+    public JsonElement argToJSONElement(int index) {
         JsonElement jsonElement = gson.fromJson((String) args.get(index), JsonElement.class);
-        getLogger().warning("PyHelper: jsonElement: "+ jsonElement.toString());
+        getLogger().warning("PyHelper: jsonElement: " + jsonElement.toString());
         return jsonElement;
     }
 
@@ -85,11 +94,11 @@ class PythonCommand {
         return stringReturn;
     }
 
-    public String argToStringUpper(int index){
+    public String argToStringUpper(int index) {
         return argToString(index).toUpperCase();
     }
 
-    public String argToStringLower(int index){
+    public String argToStringLower(int index) {
         return argToString(index).toLowerCase();
     }
 
@@ -116,8 +125,95 @@ class PythonCommand {
         return vector;
     }
 
+    public PotionEffect argToPotionEffect(int index) {
+        PyPotionEffect potionEffectParameter = gson.fromJson((String) args.get(index), PyPotionEffect.class);
+        getLogger().warning("argToPotionEffect: Got potionEffectParameter:" + potionEffectParameter.toString());
+        PotionEffect potionEffect = potionEffectParameter.toPotionEffect();
+        return potionEffect;
+    }
+
+    public PotionData argToPotionData(int index) {
+        PyPotionData potionDataParameter = gson.fromJson((String) args.get(index), PyPotionData.class);
+        getLogger().warning("potionDataParameter: " + potionDataParameter);
+        PotionData potionData = potionDataParameter.toPotionData();
+        return potionData;
+    }
+
+    public Particle argToParticle(int index) {
+        PyParticle pyParticle = gson.fromJson((String) args.get(index), PyParticle.class);
+        getLogger().warning("pyParticle: " + pyParticle);
+        Particle particle = pyParticle.toParticle();
+        return particle;
+    }
+
+    public EntityType argToProjectileEntityType(int index) {
+        PyProjectile pyProjectile = gson.fromJson((String) args.get(index), PyProjectile.class);
+        getLogger().warning("pyProjectile: " + pyProjectile);
+        EntityType projectileEntityType = pyProjectile.toProjectileEntityType();
+        return projectileEntityType;
+    }
+
+    public Villager.Type argToVillagerType(int index) {
+        PyVillagerType pyVillagerType = gson.fromJson((String) args.get(index), PyVillagerType.class);
+        Villager.Type villagerType = pyVillagerType.toVillagerType();
+        return villagerType;
+    }
+
+    public Villager.Profession argToVillagerProfession(int index) {
+        PyVillagerProfession pyVillagerProfession = gson.fromJson((String) args.get(index), PyVillagerProfession.class);
+        Villager.Profession villagerProfession = pyVillagerProfession.toVillagerProfession();
+        return villagerProfession;
+    }
+
+    public MetadataValue argToMetadataValue(int index, Plugin plugin) {
+        PyMetadataValue pyMetadataValue = gson.fromJson((String) args.get(index), PyMetadataValue.class);
+        MetadataValue metadataValue = pyMetadataValue.toMetadataValue(plugin);
+        return metadataValue;
+    }
+
+    public Collection<String> argToStringList(int index) {
+        // Used to parse an array of string or to parse an array of JSON (as string) objects before they are converted
+        List<String> paramList = (List<String>) args.get(index);
+        return (List<String>) args.get(0);
+    }
+
+    public Collection<PotionEffect> argToPotionEffects(int index) {
+        //Class<Collection<PyPotionEffect>> cls = (Class<Collection<PyPotionEffect>>)(Object)Collection.class;
+        Class<List<PyPotionEffect>> cls = (Class<List<PyPotionEffect>>) (Object) List.class;
+        getLogger().warning("argToPortionEffects: args" + args + "(" + args.getClass() + ")");
+        getLogger().warning("argToPortionEffects: args[0]" + args.get(0) + "(" + args.get(0).getClass() + ")");
+
+        // https://mkyong.com/java/gson-how-to-parse-json-arrays-an-array-of-arrays/
+        // No idea what this means
+        List<PotionEffect> potionEffects = new ArrayList<>();
+        Type listType = new TypeToken<List<PyPotionEffect>>() {
+        }.getType();
+        // List<String> paramList = (List<String>) args.get(0);
+        List<String> paramList = (List<String>) argToStringList(0);
+        getLogger().warning("argToPortionEffects: paramList" + paramList + "(" + paramList.getClass() + ")");
+
+        paramList.forEach(p -> {
+            PyPotionEffect pyPotionEffect = gson.fromJson(p, PyPotionEffect.class);
+            getLogger().warning("argToPotionEffect: p:" + p + " (" + p.getClass() + ").");
+            potionEffects.add(pyPotionEffect.toPotionEffect());
+        });
+        return potionEffects;
+    }
+
     public PyLocation getThingLocation() {
         return thingLocation;
+    }
+
+    public Method getMethodFromList(String methodName, Method[] methodList, int parameterCount) {
+        // Parameter count < 0 means we don't check parameters
+        for (Method method : methodList) {
+            if (method.getName().equals(methodName)) {
+                if (parameterCount < 0 || parameterCount == method.getParameterCount()) {
+                    return method;
+                }
+            }
+        }
+        return null;
     }
 }
 
@@ -161,8 +257,287 @@ class PyColor extends PySerializedObject {
     }
 }
 
+class PyPotionType extends PySerializedObject {
+    public String _name = "PotionType";
+    public String type;
+    public boolean extendable;
+    public boolean upgradeable;
+
+    PyPotionType() {
+    }
+
+    PyPotionType(PotionType potionType) {
+        getLogger().warning("potionType: " + potionType);
+        this.type = (potionType.getEffectType() != null) ? potionType.getEffectType().getName() : "";
+        this.extendable = potionType.isExtendable();
+        this.upgradeable = potionType.isUpgradeable();
+    }
+
+    public String toString() {
+        return "PyPotionType("
+                + this.type
+                + "," + this.extendable
+                + "," + this.upgradeable
+                + ")";
+    }
+
+    public PotionType toPotionType() {
+        return PotionType.valueOf(this.type.toUpperCase());
+    }
+}
+
+class PyPotionData extends PySerializedObject {
+    public String _name = "PotionData";
+    public PyPotionType type;
+    public boolean extended;
+    public boolean upgraded;
+
+    PyPotionData() {
+    }
+
+    PyPotionData(PotionData potionData) {
+        getLogger().warning("potionData: " + potionData);
+        this.extended = potionData.isExtended();
+        this.upgraded = potionData.isUpgraded();
+        this.type = new PyPotionType(potionData.getType());
+
+    }
+
+    public String toString() {
+        return "PyPotionData("
+                + this.type
+                + "," + this.extended
+                + "," + this.upgraded
+                + ")";
+    }
+
+    public PotionData toPotionData() {
+        return new PotionData(this.type.toPotionType(), this.extended, this.upgraded);
+    }
+}
+
+class PyVillagerType extends PySerializedObject {
+    public String _name = "VillagerType";
+    public String type;
+
+    PyVillagerType() {
+    }
+
+    PyVillagerType(String type) {
+        this.type = type;
+    }
+
+    PyVillagerType(Villager.Type villagerType) {
+        this.type = villagerType.name();
+    }
+
+    public String toString() {
+        return "PyVillagerType("
+                + this.type
+                + ")";
+    }
+
+    Villager.Type toVillagerType() {
+        return Villager.Type.valueOf(this.type.toUpperCase());
+    }
+}
+
+class PyVillagerProfession extends PySerializedObject {
+    public String _name = "VillagerProfession";
+    public String profession;
+
+    PyVillagerProfession() {
+    }
+
+    PyVillagerProfession(String type) {
+        this.profession = type;
+    }
+
+    PyVillagerProfession(Villager.Profession villagerProfession) {
+        this.profession = villagerProfession.name();
+    }
+
+    public String toString() {
+        return "PyVillagerProfession("
+                + this.profession
+                + ")";
+    }
+
+    Villager.Profession toVillagerProfession() {
+        return Villager.Profession.valueOf(this.profession.toUpperCase());
+    }
+}
+
+class PyParticle extends PySerializedObject {
+    public String _name = "Particle";
+    public String name;
+
+    PyParticle() {
+    }
+
+    PyParticle(String name) {
+        this.name = name;
+    }
+
+    PyParticle(Particle particle) {
+        this.name = particle.name();
+    }
+
+    public String toString() {
+        return "PyParticle("
+                + this.name
+                + ")";
+    }
+
+    Particle toParticle() {
+        return Particle.valueOf(this.name.toUpperCase());
+    }
+}
+
+class PyProjectile extends PySerializedObject {
+    public String _name = "Projectile";
+    public String name;
+
+    PyProjectile() {
+
+    }
+
+    public String toString() {
+        return "PyProjectile("
+                + this.name
+                + ")";
+    }
+
+    public EntityType toProjectileEntityType() {
+        // Here I need to get a class i.e. Arrow.class
+        EntityType entityType = (EntityType) EntityType.valueOf(this.name.toUpperCase());
+
+        return entityType;
+    }
+
+}
+
+class PyMetadataValue extends PySerializedObject {
+    public String _name = "MetadataValue";
+    public String value;
+    public String type;
+
+    PyMetadataValue() {
+
+    }
+
+    PyMetadataValue(String value) {
+        this.value = value;
+    }
+
+    PyMetadataValue(String value, String type) {
+        this.value = value;
+        this.type = type;
+    }
+
+    public String toString() {
+        return "PyMetadataValue("
+                + this.value
+                + ")";
+    }
+
+    public PyMetadataValue fromMetadataValue(MetadataValue metadataValue){
+        return new PyMetadataValue(metadataValue.asString(), "string");
+    }
+
+    public MetadataValue toMetadataValue(Plugin plugin) {
+        Object castValue;
+        switch (this.type.toLowerCase()) {
+            case "int" -> {
+                castValue = Integer.parseInt(this.value);
+            }
+            case "long" -> {
+                castValue = Long.parseLong(this.value);
+            }
+            case "float" -> {
+                castValue = Float.parseFloat(this.value);
+            }
+            case "double" -> {
+                castValue = Double.parseDouble(this.value);
+            }
+            case "boolean" -> {
+                castValue = BooleanUtils.toBoolean(this.value);
+            }
+            default -> {
+                castValue = (String) this.value;
+            }
+        }
+        MetadataValue metadataValue = (MetadataValue) new FixedMetadataValue(plugin, castValue);
+
+        return metadataValue;
+    }
+}
+
+class PyPotionEffect extends PySerializedObject {
+    public String _name = "PotionEffect";
+    public String potionEffectType;
+    public int duration;
+    public int amplifier;
+    public boolean ambient;
+    public boolean particles;
+    public boolean icon;
+
+    PyPotionEffect() {
+
+    }
+
+    PyPotionEffect(PotionEffect potionEffect) {
+        this.potionEffectType = potionEffect.getType().getName();
+        this.duration = potionEffect.getDuration();
+        this.amplifier = potionEffect.getAmplifier();
+        this.ambient = potionEffect.isAmbient();
+        this.particles = potionEffect.hasParticles();
+        this.icon = potionEffect.hasIcon();
+    }
+
+    public String toString() {
+        return "PyPotionEffect("
+                + this.potionEffectType
+                + "," + this.duration
+                + "," + this.amplifier
+                + "," + this.ambient
+                + "," + this.particles
+                + "," + this.icon
+                + ")";
+    }
+
+    public PotionEffectType getPotionEffectType() {
+        return PotionEffectType.getByName(this.potionEffectType.toUpperCase());
+    }
+
+    public PotionEffect toPotionEffect() {
+        PotionEffect potionEffect = new PotionEffect(this.getPotionEffectType(), this.duration, this.amplifier, this.ambient, this.particles, this.icon);
+        getLogger().warning("toPotionEffect: " + potionEffect + toString());
+        return potionEffect;
+    }
+}
+
+//class PyPotionEffectType extends PySerializedObject {
+//    public String name;
+//    public int id;
+//
+//    PyPotionEffectType() {
+//
+//    }
+//
+//    public String toString() {
+//        return "PyPotionEffectType(" + this.name + "," + this.id + ")";
+//    }
+//
+//
+//    public PotionEffectType toPotionEffectType() {
+//        return PotionEffectType.getByName(this.name.toUpperCase());
+//    }
+//}
+
+
 class PyLocation extends PySerializedObject {
-    public String _name = "MCLocation";
+    public String _name = "Location";
     public double x = 0;
     public double y = 0;
     public double z = 0;
@@ -199,19 +574,19 @@ class PyLocation extends PySerializedObject {
         return new Location(world, (double) this.x, (double) this.y, (double) this.z);
     }
 
-    public Vector toVector(){
+    public Vector toVector() {
         return new Vector(this.x, this.y, this.z);
     }
 
-    public int getBlockX(){
+    public int getBlockX() {
         return (int) this.x;
     }
 
-    public int getBlockY(){
+    public int getBlockY() {
         return (int) this.y;
     }
 
-    public int getBlockZ(){
+    public int getBlockZ() {
         return (int) this.z;
     }
 

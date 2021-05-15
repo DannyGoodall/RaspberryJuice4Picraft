@@ -3431,7 +3431,7 @@ public class RemoteSession {
                         methodActual.invoke(iam.equals("entity") ? entityRecipient : worldRecipient, floatParamter);
                         break;
                     case "boolean:PotionEffect":
-                        //
+                        // OK
                         methodActual = classRecipient.getMethod(methodName, PotionEffect.class);
                         serializedObject = args[firstArg];
                         plugin.getLogger().warning("We got: " + serializedObject);
@@ -3442,7 +3442,7 @@ public class RemoteSession {
                         send(booleanReturn);
                         break;
                     case "boolean:PotionEffect:boolean":
-                        //
+                        // OK
                         methodActual = classRecipient.getMethod(methodName, PotionEffect.class, boolean.class);
                         serializedObject = args[firstArg];
                         booleanParameter = BooleanUtils.toBoolean(args[firstArg + 1]);

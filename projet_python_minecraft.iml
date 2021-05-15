@@ -16,50 +16,23 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="inheritedJdk" />
     <orderEntry type="module-library">
-      <library name="craftbukkit-1.16.1.jar">
-        <CLASSES>
-          <root url="file://E:/Python.Minecraft/projets_Eclipse/projet_python_minecraft/Jar_ressources/craftbukkit-1.16.1.jar" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library name="minecraft_server.1.16.1.jar">
-        <CLASSES>
-          <root url="file://E:/Python.Minecraft/projets_Eclipse/projet_python_minecraft/Jar_ressources/minecraft_server.1.16.1.jar" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/Jar_resources/craftbukkit-1.16.4.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES>
-          <root url="jar://$MODULE_DIR$/Jar_resources/craftbukkit-1.16.4.jar!/" />
-        </SOURCES>
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/Jar_resources/spigot-api-1.16.4-R0.1-20201213.004254-30-shaded.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library">
       <library>
         <CLASSES>
           <root url="jar://$MODULE_DIR$/Jar_resources/gson-2.8.6.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/Jar_resources/paper-api-1.16.5-R0.1-20210511.085833-239-shaded.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/Jar_resources/paper-api-1.16.5-R0.1-20210511.085833-239-shaded.jar!/" />
+        </SOURCES>
       </library>
     </orderEntry>
   </component>

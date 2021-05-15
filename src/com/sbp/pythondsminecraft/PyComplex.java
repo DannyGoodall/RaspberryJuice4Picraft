@@ -1,7 +1,9 @@
 package com.sbp.pythondsminecraft;
 
-import net.minecraft.server.v1_16_R3.HorseColor;
-import net.minecraft.server.v1_16_R3.HorseStyle;
+//import net.minecraft.server.v1_16_R3.HorseColor;
+//import net.minecraft.server.v1_16_R3.HorseStyle;
+
+import com.google.gson.Gson;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -10,14 +12,20 @@ import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.FaceAttachable;
 import org.bukkit.block.data.Rail;
 import org.bukkit.block.data.type.*;
+import org.bukkit.block.data.type.Comparator;
+// import org.bukkit.craftbukkit.v1_16_R3.entity.CraftPlayer;
 import org.bukkit.entity.*;
+import org.bukkit.metadata.MetadataValue;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.potion.PotionData;
+import org.bukkit.potion.PotionEffect;
+import org.bukkit.potion.PotionEffectType;
+import org.bukkit.projectiles.ProjectileSource;
 import org.bukkit.util.Vector;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Arrays;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 
 public class PyComplex {
@@ -219,16 +227,58 @@ public class PyComplex {
                 methodToUse = classRecipient.getMethod(pythonCommand.method, AnimalTamer.class);
             }
             case "HorseColor" -> {
-                methodToUse = classRecipient.getMethod(pythonCommand.method, HorseColor.class);
+                methodToUse = classRecipient.getMethod(pythonCommand.method, Horse.Color.class);
             }
             case "HorseStyle" -> {
-                methodToUse = classRecipient.getMethod(pythonCommand.method, HorseStyle.class);
+                methodToUse = classRecipient.getMethod(pythonCommand.method, Horse.Style.class);
             }
             case "Location:TreeType" -> {
                 methodToUse = classRecipient.getMethod(pythonCommand.method, Location.class, TreeType.class);
             }
             case "float" -> {
                 methodToUse = classRecipient.getMethod(pythonCommand.method, float.class);
+            }
+            case "PotionEffect" -> {
+                methodToUse = classRecipient.getMethod(pythonCommand.method, PotionEffect.class);
+            }
+            case "PotionEffect:boolean" -> {
+                methodToUse = classRecipient.getMethod(pythonCommand.method, PotionEffect.class, boolean.class);
+            }
+            case "PotionEffects" -> {
+                // Class<?>: (Class<Collection<PotionEffect>>)(Class<?>)Collection.class
+                // https://stackoverflow.com/a/30754982/1300916
+                Class<Collection<PotionEffect>> cls = (Class<Collection<PotionEffect>>) (Object) Collection.class;
+                methodToUse = classRecipient.getMethod(pythonCommand.method, cls);
+            }
+            case "PotionEffectType" -> {
+                methodToUse = classRecipient.getMethod(pythonCommand.method, PotionEffectType.class);
+            }
+            case "PotionData" -> {
+                methodToUse = classRecipient.getMethod(pythonCommand.method, PotionData.class);
+            }
+            case "Particle" -> {
+                methodToUse = classRecipient.getMethod(pythonCommand.method, Particle.class);
+            }
+//            case "Projectile" -> {
+//                methodToUse = classRecipient.getMethod(pythonCommand.method, Entity.class);
+//            }
+//            case "Projectile:Velocity" -> {
+//                methodToUse = classRecipient.getMethod(pythonCommand.method, Entity.class, Vector.class);
+//            }
+            case "ProjectileSource" -> {
+                methodToUse = classRecipient.getMethod(pythonCommand.method, ProjectileSource.class);
+            }
+            case "VillagerType" -> {
+                methodToUse = classRecipient.getMethod(pythonCommand.method, Villager.Type.class);
+            }
+            case "VillagerProfession" -> {
+                methodToUse = classRecipient.getMethod(pythonCommand.method, Villager.Profession.class);
+            }
+            case "String:MetadataValue" -> {
+                methodToUse = classRecipient.getMethod(pythonCommand.method, String.class, MetadataValue.class);
+            }
+            case "String:Plugin" -> {
+                methodToUse = classRecipient.getMethod(pythonCommand.method, String.class, Plugin.class);
             }
         }
         plugin.getLogger().warning("methodToUse: " + methodToUse);
@@ -678,6 +728,7 @@ public class PyComplex {
                         iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
                         entityParameter
                 );
+                sendBoolean(booleanReturn);
             }
             case "boolean:string" -> {
                 String stringParameter = (String) pythonCommand.argToStringUpper(0);
@@ -685,6 +736,7 @@ public class PyComplex {
                         iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
                         stringParameter
                 );
+                sendBoolean(booleanReturn);
             }
             case "boolean:Location" -> {
                 Location locationParameter = (Location) pythonCommand.argToLocation(0, world);
@@ -692,6 +744,7 @@ public class PyComplex {
                         iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
                         locationParameter
                 );
+                sendBoolean(booleanReturn);
             }
             case "void:Location" -> {
                 Location locationParameter = (Location) pythonCommand.argToLocation(0, world);
@@ -750,28 +803,28 @@ public class PyComplex {
                 );
             }
             case "HorseColor:void" -> {
-                HorseColor horseColor = (HorseColor) methodToUse.invoke(
+                Horse.Color horseColor = (Horse.Color) methodToUse.invoke(
                         iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient
                 );
                 sendHorseColor(horseColor);
             }
             case "void:HorseColor" -> {
                 String stringParameter = (String) pythonCommand.argToStringUpper(0);
-                HorseColor horseColor = (HorseColor) HorseColor.valueOf(stringParameter);
+                Horse.Color horseColor = (Horse.Color) Horse.Color.valueOf(stringParameter);
                 methodToUse.invoke(
                         iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
                         horseColor
                 );
             }
             case "HorseStyle:void" -> {
-                HorseStyle horseStyle = (HorseStyle) methodToUse.invoke(
+                Horse.Style horseStyle = (Horse.Style) methodToUse.invoke(
                         iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient
                 );
                 sendHorseStyle(horseStyle);
             }
             case "void:HorseStyle" -> {
                 String stringParameter = (String) pythonCommand.argToStringUpper(0);
-                HorseStyle horseStyle = (HorseStyle) HorseStyle.valueOf(stringParameter);
+                Horse.Style horseStyle = (Horse.Style) Horse.Style.valueOf(stringParameter);
                 methodToUse.invoke(
                         iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
                         horseStyle
@@ -849,6 +902,194 @@ public class PyComplex {
                         floatParameter
                 );
             }
+            case "boolean:PotionEffect" -> {
+                PotionEffect potionEffectParameter = pythonCommand.argToPotionEffect(0);
+                boolean booleanReturn = (boolean) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        potionEffectParameter
+                );
+                sendBoolean(booleanReturn);
+            }
+            case "boolean:PotionEffect:boolean" -> {
+                PotionEffect potionEffectParameter = pythonCommand.argToPotionEffect(0);
+                boolean booleanParameter = pythonCommand.argToBoolean(1);
+                boolean booleanReturn = (boolean) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        potionEffectParameter,
+                        booleanParameter
+                );
+                sendBoolean(booleanReturn);
+            }
+            case "boolean:PotionEffects" -> {
+                Collection<PotionEffect> potionEffectsParameter = pythonCommand.argToPotionEffects(0);
+                boolean booleanReturn = (boolean) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        potionEffectsParameter
+                );
+                sendBoolean(booleanReturn);
+            }
+            case "PotionEffects:void" -> {
+                Collection<PotionEffect> potionEffects = (Collection<PotionEffect>) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient
+                );
+                ArrayList<String> potionNames = new ArrayList<>();
+                for (PotionEffect p : potionEffects) {
+                    potionNames.add(p.getType().getName().toUpperCase());
+                }
+                sendStrings(potionNames);
+            }
+            case "PotionEffect:PotionEffectType" -> {
+                String potionEffectTypeName = pythonCommand.argToStringUpper(0);
+                PotionEffectType potionEffectType = PotionEffectType.getByName(potionEffectTypeName);
+
+                PotionEffect potionEffect = (PotionEffect) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        potionEffectType
+                );
+                PyPotionEffect pyPotionEffect = new PyPotionEffect(potionEffect);
+                sendPotionEffect(pyPotionEffect);
+            }
+            case "boolean:PotionEffectType" -> {
+                String potionEffectTypeName = pythonCommand.argToStringUpper(0);
+                PotionEffectType potionEffectType = PotionEffectType.getByName(potionEffectTypeName);
+
+                boolean booleanReturn = (boolean) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        potionEffectType
+                );
+                sendBoolean(booleanReturn);
+            }
+            case "void:PotionEffectType" -> {
+                String potionEffectTypeName = pythonCommand.argToStringUpper(0);
+                PotionEffectType potionEffectType = PotionEffectType.getByName(potionEffectTypeName);
+
+                methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        potionEffectType
+                );
+            }
+            case "PotionData:void" -> {
+                PotionData potionData = (PotionData) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient
+                );
+                PyPotionData pyPotionData = new PyPotionData(potionData);
+                sendPotionData(pyPotionData);
+            }
+            case "void:PotionData" -> {
+                PotionData potionData = (PotionData) pythonCommand.argToPotionData(0);
+
+                methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        potionData
+                );
+            }
+            case "void:Particle" -> {
+                Particle particle = (Particle) pythonCommand.argToParticle(0);
+                methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        particle
+                );
+            }
+            case "Particle:void" -> {
+                Particle particle = (Particle) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient
+                );
+                PyParticle pyParticle = new PyParticle(particle);
+                sendParticle(pyParticle);
+            }
+//            case "ProjectileSource:void" -> {
+//                ProjectileSource projectileSource = (ProjectileSource) methodToUse.invoke(
+//                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient
+//                );
+//                PyParticle pyParticle = new PyParticle(particle);
+//                sendParticle(pyParticle);
+//            }
+            case "void:Projectile" -> {
+                EntityType projectileEntityType = pythonCommand.argToProjectileEntityType(0);
+                // THERE MUST BE A WAY TO GET THIS METHOD THROUGH REFLECTION?
+                Method[] methodList = classRecipient.getMethods();
+                methodToUse = pythonCommand.getMethodFromList(pythonCommand.method, methodList, 1);
+
+                Projectile shot = (Projectile) methodToUse.invoke(
+                        (Entity) entityRecipient,
+                        // (Class<? extends Projectile>) DragonFireball.class
+                        projectileEntityType.getEntityClass()
+                );
+            }
+            case "void:Projectile:Velocity" -> {
+                EntityType projectileEntityType = pythonCommand.argToProjectileEntityType(0);
+                Vector vector = pythonCommand.argToVector(1);
+                plugin.getLogger().warning("projectileEntityType: " + projectileEntityType);
+                plugin.getLogger().warning("vector: " + vector);
+
+
+                // THERE MUST BE A WAY TO GET THIS METHOD THROUGH REFLECTION?
+                Method[] methodList = classRecipient.getMethods();
+                methodToUse = pythonCommand.getMethodFromList(pythonCommand.method, methodList, 2);
+
+                Projectile shot = (Projectile) methodToUse.invoke(
+                        (Entity) entityRecipient,
+                        // (Class<? extends Projectile>) DragonFireball.class
+                        projectileEntityType.getEntityClass(),
+                        vector
+                );
+                plugin.getLogger().warning("shot: " + shot);
+            }
+            case "void:VillagerType" -> {
+                Villager.Type villagerType = pythonCommand.argToVillagerType(0);
+                methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        villagerType
+                );
+            }
+            case "VillagerType:void" -> {
+                Villager.Type villagerType = (Villager.Type) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient
+                );
+                PyVillagerType pyVillagerType = new PyVillagerType(villagerType);
+                sendVillagerType(pyVillagerType);
+            }
+            case "void:VillagerProfession" -> {
+                Villager.Profession villagerProfession = pythonCommand.argToVillagerProfession(0);
+                methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        villagerProfession
+                );
+            }
+            case "VillagerProfession:void" -> {
+                Villager.Profession villagerProfession = (Villager.Profession) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient
+                );
+                PyVillagerProfession pyVillagerProfession = new PyVillagerProfession(villagerProfession);
+                sendVillagerProfession(pyVillagerProfession);
+            }
+            case "void:String:MetadataValue" -> {
+                String metadataKey = pythonCommand.argToString(0);
+                MetadataValue metadataValue = pythonCommand.argToMetadataValue(1, plugin);
+                methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        metadataKey,
+                        metadataValue
+                );
+            }
+            case "MetadataValues:string" -> {
+                String metadataKey = pythonCommand.argToString(0);
+                plugin.getLogger().warning("metadataKey: " + metadataKey );
+                //List<MetadataValue> dgMetaData = (List<MetadataValue>) plugin.getHostPlayer().getMetadata(metadataKey);
+
+                List<MetadataValue> metadataValues = (List<MetadataValue>) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        metadataKey
+                );
+                plugin.getLogger().warning("metadataValues[]: " + metadataValues.toString());
+                ArrayList<PyMetadataValue> pyMetadataValues = new ArrayList<>();
+                for (MetadataValue m : metadataValues) {
+                    pyMetadataValues.add(new PyMetadataValue().fromMetadataValue(m));
+                }
+                plugin.getLogger().warning("pyMetadataValues: " + pyMetadataValues.toString());
+                sendMetadataValues(pyMetadataValues);
+
+            }
             default -> {
                 plugin.getLogger().warning("Didn't find the correct method signature for[" + pythonCommand.signature + "]");
             }
@@ -887,9 +1128,12 @@ public class PyComplex {
         session.send(Arrays.toString(s));
     }
 
+    public void sendStrings(ArrayList<String> s) {
+        session.send(Arrays.toString(s.toArray()));
+    }
+
     public void sendStringSet(Set<String> s) {
         session.send(s.toString());
-        Location l;
     }
 
     public void sendBambooLeaves(Bamboo.Leaves l) {
@@ -931,11 +1175,11 @@ public class PyComplex {
         session.send(dyeColor.toString());
     }
 
-    public void sendHorseColor(HorseColor horseColor) {
+    public void sendHorseColor(Horse.Color horseColor) {
         session.send(horseColor.toString());
     }
 
-    public void sendHorseStyle(HorseStyle horseStyle) {
+    public void sendHorseStyle(Horse.Style horseStyle) {
         session.send(horseStyle.toString());
     }
 
@@ -951,23 +1195,49 @@ public class PyComplex {
         session.send(entityType.toString());
     }
 
-    public void sendEntity(Entity entity){
+    public void sendEntity(Entity entity) {
         //Send back the entity ID
         int entityID = entity.getEntityId();
         session.send(Integer.toString(entityID));
     }
 
-    public void sendLivingEntity(LivingEntity livingEntity){
+    public void sendLivingEntity(LivingEntity livingEntity) {
         //Send back the entity ID
         int entityID = livingEntity.getEntityId();
         session.send(Integer.toString(entityID));
     }
 
-    public void sendAnimalTamer(AnimalTamer animalTamer){
+    public void sendAnimalTamer(AnimalTamer animalTamer) {
         //Send back the entity ID
         Entity e = (Entity) animalTamer;
         int entityID = e.getEntityId();
         session.send(Integer.toString(entityID));
+    }
+
+    public void sendPotionEffect(PyPotionEffect pyPotionEffect) {
+        session.send(pyPotionEffect.toJson());
+    }
+
+    public void sendPotionData(PyPotionData pyPotionData) {
+        session.send(pyPotionData.toJson());
+    }
+
+    public void sendParticle(PyParticle pyParticle) {
+        session.send(pyParticle.toJson());
+    }
+
+    public void sendVillagerProfession(PyVillagerProfession pyVillagerProfession) {
+        session.send(pyVillagerProfession.toJson());
+    }
+
+    public void sendVillagerType(PyVillagerType pyVillagerType) {
+        session.send(pyVillagerType.toJson());
+    }
+
+    public void sendMetadataValues(ArrayList<PyMetadataValue> pyMetadataValues){
+        Gson gson = new Gson();
+        String r = gson.toJson(pyMetadataValues);
+        session.send(r);
     }
 
 }
