@@ -3912,7 +3912,8 @@ public class RemoteSession {
     }
 
     private String getProjectileHits() {
-        return getProjectileHits(-1);
+        // return getProjectileHits(-1);
+        return getProjectileHitsNew(-1);
     }
 
     private String getProjectileHits(int entityId) {
@@ -3954,6 +3955,85 @@ public class RemoteSession {
                         b.append(0);
                         b.append(",");
                         b.append("");
+                    }
+                }
+                b.append("|");
+                arrow.remove();
+                iter.remove();
+            }
+        }
+        if (b.length() > 0)
+            b.deleteCharAt(b.length() - 1);
+        //plugin.getLogger().info("Entité touchée : " + b.toString());
+        return b.toString();
+
+    }
+
+    private String getProjectileHitsNew(int entityId) {
+        // DG Return new format of projectile hit information
+        // x, y, z, player_name, player_id, player_location_x, player_location_y, player_location_z, entity_id, thing_name
+        //
+        // x, y, z                  -> location of thing (block or entity) that was hit by the arrow
+        // player_name              -> the name of the player shooting
+        // player_id                -> the id of the player shooting
+        // player_location_x, y, z  -> the location of the player when shot was fired
+        // entity_id                -> the ID of the entity or 0 if it hit a block
+        // thing_name               -> Either the name of the entity type or the name of the block
+
+        Boolean hitBlock;
+
+        StringBuilder b = new StringBuilder();
+        for (Iterator<ProjectileHitEvent> iter = projectileHitQueue.iterator(); iter.hasNext(); ) {
+            ProjectileHitEvent event = iter.next();
+            Arrow arrow = (Arrow) event.getEntity();
+            LivingEntity shooter = (LivingEntity) arrow.getShooter();
+            if (entityId == -1 || shooter.getEntityId() == entityId) {
+                if (shooter instanceof Player) {
+                    Player player = (Player) shooter;
+                    Block block = event.getHitBlock();
+                    // Block block = arrow.getAttachedBlock();
+                    if (block == null) {
+                        block = arrow.getLocation().getBlock();
+                        hitBlock = false;
+                    }
+                    else {
+                        hitBlock = true;
+                    }
+                    Location loc = block.getLocation();
+                    b.append(blockLocationToRelative(loc));
+                    b.append(",");
+                    //b.append(1); //blockFaceToNotch(event.getBlockFace()), but don't really care
+                    //b.append(",");
+                    b.append(player.getPlayerListName());   // nom du joueur
+
+                    // Add player ID
+                    b.append(",");
+                    b.append(player.getEntityId());
+
+                    // Now add player location
+                    b.append(",");
+                    b.append(blockLocationToRelative(player.getLocation()));
+
+                    Entity hitEntity = event.getHitEntity();
+                    if (hitEntity != null) {
+                        if (hitEntity instanceof Player) {
+                            b.append(",");
+                            Player hitPlayer = (Player) hitEntity;
+                            b.append(hitPlayer.getEntityId());
+                            b.append(",");
+                            b.append(hitPlayer.getPlayerListName());
+                        } else {
+                            b.append(",");
+                            b.append(hitEntity.getEntityId());
+                            b.append(",");
+                            b.append(hitEntity.getType().toString());
+                            //plugin.getLogger().info("Entité touchée : " + b.toString());
+                        }
+                    } else {  // here we assume we've hit a block so we add block name and entity id of 0
+                        b.append(",");
+                        b.append(0);
+                        b.append(",");
+                        b.append(block.getType());
                     }
                 }
                 b.append("|");
