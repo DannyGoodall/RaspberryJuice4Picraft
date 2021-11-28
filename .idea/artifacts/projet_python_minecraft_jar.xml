@@ -1,6 +1,6 @@
 <component name="ArtifactManager">
   <artifact type="jar" build-on-make="true" name="projet_python_minecraft:jar">
-    <output-path>$USER_HOME$/OneDrive/Desktop/Paper/plugins</output-path>
+    <output-path>$PROJECT_DIR$/../Paper1.16.5/plugins</output-path>
     <root id="archive" name="projet_python_minecraft.jar">
       <element id="module-output" name="projet_python_minecraft" />
       <element id="file-copy" path="$PROJECT_DIR$/plugin.yml" />
