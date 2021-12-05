@@ -32,6 +32,8 @@ import org.bukkit.block.data.Rail;
 import org.bukkit.block.data.type.*;
 import org.bukkit.block.data.type.Comparator;
 import org.bukkit.entity.*;
+import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.EntityTargetEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
 import org.bukkit.event.player.AsyncPlayerChatEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
@@ -71,6 +73,8 @@ public class RemoteSession {
     protected ArrayDeque<AsyncPlayerChatEvent> chatPostedQueue = new ArrayDeque<AsyncPlayerChatEvent>();
 
     protected ArrayDeque<ProjectileHitEvent> projectileHitQueue = new ArrayDeque<ProjectileHitEvent>();
+
+    protected ArrayDeque<EntityDeathEvent> entityDeathQueue = new ArrayDeque<EntityDeathEvent>();
 
     private int maxCommandsPerTick = 9000;
 
@@ -134,6 +138,11 @@ public class RemoteSession {
                 projectileHitQueue.add(event);
             }
         }
+    }
+
+    public void queueEntityDeathEvent(EntityDeathEvent event) {
+        //plugin.getLogger().info(event.toString());
+        entityDeathQueue.add(event);
     }
 
     /**
@@ -469,6 +478,10 @@ public class RemoteSession {
                 // events.projectile.hits
             } else if (c.equals("events.projectile.hits")) {
                 send(getProjectileHits());
+
+                // events.livingentityt.deathevent
+            } else if (c.equals("events.livingentity.deathevent")) {
+                send(getDeathEvent());
 
                 // entity.events.clear
             } else if (c.equals("entity.events.clear")) {
@@ -3984,6 +3997,8 @@ public class RemoteSession {
 
         StringBuilder b = new StringBuilder();
         for (Iterator<ProjectileHitEvent> iter = projectileHitQueue.iterator(); iter.hasNext(); ) {
+            EntityTargetEvent e;
+
             ProjectileHitEvent event = iter.next();
             Arrow arrow = (Arrow) event.getEntity();
             LivingEntity shooter = (LivingEntity) arrow.getShooter();
@@ -4047,6 +4062,47 @@ public class RemoteSession {
         return b.toString();
 
     }
+
+    private String getDeathEvent() {
+        // return getProjectileHits(-1);
+        return getDeathEvent(-1);
+    }
+
+    private String getDeathEvent(int entityId) {
+        // DG Return new format of projectile hit information
+        // x, y, z, player_name, player_id, player_location_x, player_location_y, player_location_z, entity_id, thing_name
+        //
+        // x, y, z                  -> location of thing (block or entity) that was hit by the arrow
+        // player_name              -> the name of the player shooting
+        // player_id                -> the id of the player shooting
+        // player_location_x, y, z  -> the location of the player when shot was fired
+        // entity_id                -> the ID of the entity or 0 if it hit a block
+        // thing_name               -> Either the name of the entity type or the name of the block
+
+        StringBuilder b = new StringBuilder();
+        for (Iterator<EntityDeathEvent> iter = entityDeathQueue.iterator(); iter.hasNext(); ) {
+            EntityTargetEvent e;
+
+            EntityDeathEvent event = iter.next();
+            String entityType = event.getEntityType().toString();
+            Entity entity = event.getEntity();
+            int deadEntityId = entity.getEntityId();
+            if (entityId == -1 || deadEntityId == entityId) {
+                b.append(deadEntityId);
+                b.append(",");
+                b.append(entityType);
+                b.append("|");
+                iter.remove();
+                entity.remove();
+            }
+        }
+        if (b.length() > 0)
+            b.deleteCharAt(b.length() - 1);
+        //plugin.getLogger().info("Entité touchée : " + b.toString());
+        return b.toString();
+
+    }
+
 
     private void clearEntityEvents(int entityId) {
         for (Iterator<PlayerInteractEvent> iter = interactEventQueue.iterator(); iter.hasNext(); ) {

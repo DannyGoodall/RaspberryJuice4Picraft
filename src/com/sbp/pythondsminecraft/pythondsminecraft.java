@@ -1,5 +1,6 @@
 package com.sbp.pythondsminecraft;
 
+import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.plugin.java.JavaPlugin;
 import java.net.InetSocketAddress;
 import java.util.ArrayList;
@@ -32,6 +33,7 @@ public class pythondsminecraft extends JavaPlugin implements Listener {
 			Material.GOLDEN_SWORD, 
 			Material.IRON_SWORD, 
 			Material.STONE_SWORD, 
+			Material.NETHERITE_SWORD,
 			Material.WOODEN_SWORD);
 
 	public ServerListenerThread serverThread;
@@ -141,6 +143,14 @@ public class pythondsminecraft extends JavaPlugin implements Listener {
 		
 		for (RemoteSession session: sessions) {
 			session.queueProjectileHitEvent(event);
+		}
+	}
+
+	@EventHandler(ignoreCancelled=true)
+	public void onEntityDeath(EntityDeathEvent event) {
+
+		for (RemoteSession session: sessions) {
+			session.queueEntityDeathEvent(event);
 		}
 	}
 
