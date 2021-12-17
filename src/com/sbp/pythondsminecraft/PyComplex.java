@@ -27,7 +27,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
-
+import org.bukkit.entity.EntityType
 public class PyComplex {
     public pythondsminecraft plugin;
     public RemoteSession session;
