@@ -40,7 +40,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
-
+import org.bukkit.entity.EntityType;
 
 public class RemoteSession {
 
@@ -415,7 +415,11 @@ public class RemoteSession {
 
 
                 // world.removeEntity
+            } else if (c.equals("world.getEntityById")) {
+                int  entityId = Integer.parseInt(args[0]);
+                send(getEntityById(entityId));    // entityType est une chaîne de caractères
             } else if (c.equals("world.removeEntity")) {
+                // world.removeEntity
                 int result = 0;
                 for (Entity e : world.getEntities()) {
                     if (e.getEntityId() == Integer.parseInt(args[0])) {
@@ -3797,6 +3801,22 @@ public class RemoteSession {
         result.append(location.getBlockX());
         result.append(location.getBlockY());
         result.append(location.getBlockZ());
+        return (result.toString());
+    }
+
+    private String getEntityById(int entityId){
+        // Get the Entity details for this entityId
+        plugin.getLogger().warning("Inside getEntityId: ()");
+
+        StringBuilder result = new StringBuilder();
+
+        World world = origin.getWorld();
+
+        for (org.bukkit.entity.Entity e : world.getEntities()) { // we get all of the entities in the world - expensive
+            if (e.getEntityId() == entityId) {
+                result.append(getEntityMsg(e));
+            }
+        }
         return (result.toString());
     }
 

@@ -5,6 +5,7 @@ package com.sbp.pythondsminecraft;
 
 import com.google.gson.Gson;
 import org.bukkit.*;
+import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.Bisected;
@@ -21,13 +22,15 @@ import org.bukkit.potion.PotionData;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.projectiles.ProjectileSource;
+import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.*;
 
-import org.bukkit.entity.EntityType
+import org.bukkit.entity.EntityType;
+
 public class PyComplex {
     public pythondsminecraft plugin;
     public RemoteSession session;
@@ -279,6 +282,45 @@ public class PyComplex {
             }
             case "String:Plugin" -> {
                 methodToUse = classRecipient.getMethod(pythonCommand.method, String.class, Plugin.class);
+            }
+            case "Location:double:double:double" -> {
+                methodToUse = classRecipient.getMethod(
+                        pythonCommand.method,
+                        Location.class,
+                        double.class,
+                        double.class,
+                        double.class
+                );
+            }
+            case "BoundingBox" -> {
+                methodToUse = classRecipient.getMethod(
+                        pythonCommand.method,
+                        BoundingBox.class
+                );
+            }
+            case "int:int" -> {
+                methodToUse = classRecipient.getMethod(
+                        pythonCommand.method,
+                        int.class,
+                        int.class
+                );
+            }
+            case "int:int:int" -> {
+                methodToUse = classRecipient.getMethod(
+                        pythonCommand.method,
+                        int.class,
+                        int.class,
+                        int.class
+                );
+            }
+            case "int:int:int:Biome" -> {
+                methodToUse = classRecipient.getMethod(
+                        pythonCommand.method,
+                        int.class,
+                        int.class,
+                        int.class,
+                        Biome.class
+                );
             }
         }
         plugin.getLogger().warning("methodToUse: " + methodToUse);
@@ -938,6 +980,97 @@ public class PyComplex {
                 }
                 sendStrings(potionNames);
             }
+            case "Entities:Location:double:double:double" -> {
+                Location locationParameter = (Location) pythonCommand.argToLocation(0, world);
+                double doubleParameterX = (double) pythonCommand.argToDouble(1);
+                double doubleParameterY = (double) pythonCommand.argToDouble(2);
+                double doubleParameterZ = (double) pythonCommand.argToDouble(3);
+
+                Collection<Entity> entities = (Collection<Entity>) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        locationParameter,
+                        doubleParameterX,
+                        doubleParameterY,
+                        doubleParameterZ
+                );
+                sendEntities(entities);
+            }
+            case "Entities:BoundingBox" -> {
+                BoundingBox boundingBoxParameter = (BoundingBox) pythonCommand.argToBoundingBox(0);
+                plugin.getLogger().warning("ENTITIES:BoundingBox: " + boundingBoxParameter.toString());
+                Collection<Entity> entities = (Collection<Entity>) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        boundingBoxParameter
+                );
+                plugin.getLogger().warning("entities: " + entities.toString());
+                sendEntities(entities);
+            }
+            case "Block:int:int" -> {
+                Integer xParameter = (int) pythonCommand.argToInteger(0);
+                Integer zParameter = (int) pythonCommand.argToInteger(1);
+                //plugin.getLogger().warning("ENTITIES:BoundingBox: " + boundingBoxParameter.toString());
+                Block block  = (Block) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        xParameter,
+                        zParameter
+                );
+                plugin.getLogger().warning("block: " + block.toString());
+                sendBlock(block.getLocation());
+            }
+            case "int:int:int" -> {
+                Integer xParameter = (int) pythonCommand.argToInteger(0);
+                Integer zParameter = (int) pythonCommand.argToInteger(1);
+                //plugin.getLogger().warning("ENTITIES:BoundingBox: " + boundingBoxParameter.toString());
+                Integer integerReturn  = (Integer) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        xParameter,
+                        zParameter
+                );
+                plugin.getLogger().warning("int: " + integerReturn.toString());
+                sendInt(integerReturn);
+            }
+            case "void:int:int:int:Biome" -> {
+                Integer xParameter = (int) pythonCommand.argToInteger(0);
+                Integer yParameter = (int) pythonCommand.argToInteger(1);
+                Integer zParameter = (int) pythonCommand.argToInteger(2);
+                Biome biomeParameter = (Biome) pythonCommand.argToBiome(3);
+                //plugin.getLogger().warning("ENTITIES:BoundingBox: " + boundingBoxParameter.toString());
+                methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        xParameter,
+                        yParameter,
+                        zParameter,
+                        biomeParameter
+                );
+            }
+            case "Biome:int:int:int" -> {
+                Integer xParameter = (int) pythonCommand.argToInteger(0);
+                Integer yParameter = (int) pythonCommand.argToInteger(1);
+                Integer zParameter = (int) pythonCommand.argToInteger(2);
+                //plugin.getLogger().warning("ENTITIES:BoundingBox: " + boundingBoxParameter.toString());
+                Biome biomeReturn  = (Biome) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        xParameter,
+                        yParameter,
+                        zParameter
+                );
+                plugin.getLogger().warning("biome: " + biomeReturn.toString());
+                sendBiome(biomeReturn);
+            }
+            case "double:int:int:int" -> {
+                Integer xParameter = (int) pythonCommand.argToInteger(0);
+                Integer yParameter = (int) pythonCommand.argToInteger(1);
+                Integer zParameter = (int) pythonCommand.argToInteger(2);
+                //plugin.getLogger().warning("ENTITIES:BoundingBox: " + boundingBoxParameter.toString());
+                Double doubleReturn  = (Double) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        xParameter,
+                        yParameter,
+                        zParameter
+                );
+                plugin.getLogger().warning("doubleReturn: " + doubleReturn.toString());
+                sendDouble(doubleReturn);
+            }
             case "PotionEffect:PotionEffectType" -> {
                 String potionEffectTypeName = pythonCommand.argToStringUpper(0);
                 PotionEffectType potionEffectType = PotionEffectType.getByName(potionEffectTypeName);
@@ -1074,7 +1207,7 @@ public class PyComplex {
             }
             case "MetadataValues:string" -> {
                 String metadataKey = pythonCommand.argToString(0);
-                plugin.getLogger().warning("metadataKey: " + metadataKey );
+                plugin.getLogger().warning("metadataKey: " + metadataKey);
                 //List<MetadataValue> dgMetaData = (List<MetadataValue>) plugin.getHostPlayer().getMetadata(metadataKey);
 
                 List<MetadataValue> metadataValues = (List<MetadataValue>) methodToUse.invoke(
@@ -1171,6 +1304,22 @@ public class PyComplex {
         session.send(pyLocation.toJson());
     }
 
+    public void sendBoundingBox(BoundingBox boundingBox) {
+        // NOT TESTED
+        PyBoundingBox pyBoundingBox = new PyBoundingBox(boundingBox);
+        session.send(pyBoundingBox.toJson());
+    }
+
+    public void sendBlock(Location location){
+        PyBlock pyBlock = new PyBlock(location);
+        session.send(pyBlock.toJson());
+    }
+
+    public void sendBiome(Biome biome){
+        PyBiome pyBiome = new PyBiome(biome);
+        session.send(pyBiome.toJson());
+    }
+
     public void sendDyeColor(DyeColor dyeColor) {
         session.send(dyeColor.toString());
     }
@@ -1199,6 +1348,15 @@ public class PyComplex {
         //Send back the entity ID
         int entityID = entity.getEntityId();
         session.send(Integer.toString(entityID));
+    }
+
+    public void sendEntities(Collection<Entity> entities) {
+        ArrayList<String> entityIds = new ArrayList<>();
+
+        for (Entity e : entities) {
+            entityIds.add(Integer.toString(e.getEntityId()));
+        }
+        session.send(String.join(",", entityIds));
     }
 
     public void sendLivingEntity(LivingEntity livingEntity) {
@@ -1234,7 +1392,7 @@ public class PyComplex {
         session.send(pyVillagerType.toJson());
     }
 
-    public void sendMetadataValues(ArrayList<PyMetadataValue> pyMetadataValues){
+    public void sendMetadataValues(ArrayList<PyMetadataValue> pyMetadataValues) {
         Gson gson = new Gson();
         String r = gson.toJson(pyMetadataValues);
         session.send(r);

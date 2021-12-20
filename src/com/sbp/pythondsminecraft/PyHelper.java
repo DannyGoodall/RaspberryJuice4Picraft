@@ -4,10 +4,9 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.reflect.TypeToken;
-import org.bukkit.Color;
-import org.bukkit.Location;
-import org.bukkit.Particle;
-import org.bukkit.World;
+import org.bukkit.*;
+import org.bukkit.block.Biome;
+import org.bukkit.block.Block;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Villager;
 import org.bukkit.metadata.FixedMetadataValue;
@@ -18,6 +17,7 @@ import org.bukkit.potion.PotionEffect;
 import org.apache.commons.lang.BooleanUtils;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.potion.PotionType;
+import org.bukkit.util.BoundingBox;
 import org.bukkit.util.Vector;
 
 import java.lang.reflect.Method;
@@ -139,6 +139,24 @@ class PythonCommand {
         return potionData;
     }
 
+    public BoundingBox argToBoundingBox(int index) {
+        PyBoundingBox boundingBoxParameter = gson.fromJson((String) args.get(index), PyBoundingBox.class);
+        getLogger().warning("boundBoxParameter: " + boundingBoxParameter);
+        BoundingBox boundingBox = boundingBoxParameter.toBoundingBox();
+        return boundingBox;
+    }
+
+    public Block argToBlock(int index, World world){
+        PyBlock blockParameter = gson.fromJson((String) args.get(index), PyBlock.class);
+        return (Block) blockParameter.toBlock(world);
+    }
+
+    public Biome argToBiome(int index){
+        PyBiome biomeParameter = gson.fromJson((String) args.get(index), PyBiome.class);
+        Biome biome = biomeParameter.toBiome();
+        return biome;
+    }
+
     public Particle argToParticle(int index) {
         PyParticle pyParticle = gson.fromJson((String) args.get(index), PyParticle.class);
         getLogger().warning("pyParticle: " + pyParticle);
@@ -223,6 +241,108 @@ class PySerializedObject {
 
     String toJson() {
         return gson.toJson(this);
+    }
+}
+
+class PyBoundingBox extends PySerializedObject {
+    public String _name = "BoundingBox";
+    public double x1 = 0;
+    public double y1 = 0;
+    public double z1 = 0;
+    public double x2 = 0;
+    public double y2 = 0;
+    public double z2 = 0;
+
+    PyBoundingBox() {
+
+    }
+
+    PyBoundingBox(double x1, double y1, double z1, double x2, double y2, double z2) {
+        this.x1 = Math.min(x1, x2);
+        this.y1 = Math.min(y1, y2);
+        this.z1 = Math.min(z1, z2);
+        this.x2 = Math.max(x1, x2);
+        this.y2 = Math.max(y1, y2);
+        this.z2 = Math.max(z1, z2);
+    }
+
+    PyBoundingBox(BoundingBox boundingBox) {
+        this.x1 = boundingBox.getMinX();
+        this.y1 = boundingBox.getMinY();
+        this.z1 = boundingBox.getMinZ();
+        this.x2 = boundingBox.getMaxX();
+        this.y2 = boundingBox.getMaxY();
+        this.z2 = boundingBox.getMaxZ();
+    }
+
+    public String toString() {
+        return "PyBoundingBox("
+                + this.x1 + ","
+                + this.y1 + ","
+                + this.z1 + ","
+                + this.x2 + ","
+                + this.y2 + ","
+                + this.z2 +
+                ")";
+    }
+
+    public BoundingBox toBoundingBox() {
+        return new BoundingBox(this.x1, this.y1, this.z1, this.x2, this.y2, this.z2);
+    }
+}
+
+class PyBlock extends PySerializedObject {
+    public String _name = "Block";
+    public String material = "";
+    public String data = "";
+    public PyLocation location = new PyLocation(0, 0, 0);
+
+    PyBlock() {
+
+    }
+
+    PyBlock(Location location) {
+        Block block = location.getBlock();
+        this.material = (String) block.getType().toString();
+        this.data = (String) block.getBlockData().toString();
+        this.location = (PyLocation) new PyLocation(block.getLocation());
+    }
+
+    @Override
+    public String toString() {
+        return "PyBlock{" +
+                "material='" + material + '\'' +
+                ", data='" + data + '\'' +
+                ", location=" + location +
+                '}';
+    }
+
+    public Block toBlock(World world){
+        Block block = this.location.toLocation(world).getBlock();
+        return block;
+    }
+}
+
+class PyBiome extends PySerializedObject {
+    public String _name = "Biome";
+    public String name = "";
+
+    PyBiome(){
+
+    }
+
+    PyBiome(String biomeName){
+        Biome biome = Biome.valueOf(biomeName);
+        this.name = biome.name();
+    }
+
+    PyBiome(Biome biome){
+        this.name = biome.name();
+    }
+
+    public Biome toBiome(){
+        Biome biome = Biome.valueOf(this.name);
+        return biome;
     }
 }
 
@@ -441,7 +561,7 @@ class PyMetadataValue extends PySerializedObject {
                 + ")";
     }
 
-    public PyMetadataValue fromMetadataValue(MetadataValue metadataValue){
+    public PyMetadataValue fromMetadataValue(MetadataValue metadataValue) {
         return new PyMetadataValue(metadataValue.asString(), "string");
     }
 
