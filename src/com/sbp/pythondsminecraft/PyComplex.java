@@ -292,6 +292,13 @@ public class PyComplex {
                         double.class
                 );
             }
+            case "Location:double" -> {
+                methodToUse = classRecipient.getMethod(
+                        pythonCommand.method,
+                        Location.class,
+                        double.class
+                );
+            }
             case "BoundingBox" -> {
                 methodToUse = classRecipient.getMethod(
                         pythonCommand.method,
@@ -821,8 +828,7 @@ public class PyComplex {
                 sendLivingEntity(livingEntityReturn);
             }
             case "void:LivingEntity" -> {
-                int intParameter = (int) pythonCommand.argToInteger(0);
-                LivingEntity livingEntity = (LivingEntity) plugin.getEntity(intParameter);
+                LivingEntity livingEntity = (LivingEntity) pythonCommand.argToEntity(0, plugin);
                 methodToUse.invoke(
                         iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
                         livingEntity
@@ -995,6 +1001,21 @@ public class PyComplex {
                 );
                 sendEntities(entities);
             }
+            case "LivingEntities:Location:double:double:double" -> {
+                Location locationParameter = (Location) pythonCommand.argToLocation(0, world);
+                double doubleParameterX = (double) pythonCommand.argToDouble(1);
+                double doubleParameterY = (double) pythonCommand.argToDouble(2);
+                double doubleParameterZ = (double) pythonCommand.argToDouble(3);
+
+                Collection<LivingEntity> livingEntities = (Collection<LivingEntity>) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        locationParameter,
+                        doubleParameterX,
+                        doubleParameterY,
+                        doubleParameterZ
+                );
+                sendLivingEntities(livingEntities);
+            }
             case "Entities:BoundingBox" -> {
                 BoundingBox boundingBoxParameter = (BoundingBox) pythonCommand.argToBoundingBox(0);
                 plugin.getLogger().warning("ENTITIES:BoundingBox: " + boundingBoxParameter.toString());
@@ -1004,6 +1025,17 @@ public class PyComplex {
                 );
                 plugin.getLogger().warning("entities: " + entities.toString());
                 sendEntities(entities);
+            }
+            case "LivingEntities:Location:double" -> {
+                Location locationParameter = (Location) pythonCommand.argToLocation(0, world);
+                double doubleParameter = (double) pythonCommand.argToDouble(1);
+                Collection<LivingEntity> livingEntities = (Collection<LivingEntity>) methodToUse.invoke(
+                        iam.equals("block") ? classRecipient.cast(blockData) : iam.equals("entity") ? entityRecipient : worldRecipient,
+                        locationParameter,
+                        doubleParameter
+                );
+                plugin.getLogger().warning("livingentities: " + livingEntities.toString());
+                sendLivingEntities(livingEntities);
             }
             case "Block:int:int" -> {
                 Integer xParameter = (int) pythonCommand.argToInteger(0);
@@ -1345,24 +1377,45 @@ public class PyComplex {
     }
 
     public void sendEntity(Entity entity) {
-        //Send back the entity ID
-        int entityID = entity.getEntityId();
-        session.send(Integer.toString(entityID));
+        //Send back the entity complex object
+        PyEntity pyEntityReturn = new PyEntity(entity);
+        session.send(pyEntityReturn.toJson());
     }
 
     public void sendEntities(Collection<Entity> entities) {
-        ArrayList<String> entityIds = new ArrayList<>();
+        ArrayList<PyEntity> pyEntities = new ArrayList<>();
+        Gson gson = new Gson();
 
         for (Entity e : entities) {
-            entityIds.add(Integer.toString(e.getEntityId()));
+            pyEntities.add(new PyEntity(e));
         }
-        session.send(String.join(",", entityIds));
+        String r = gson.toJson(pyEntities);
+        session.send(r);
     }
 
     public void sendLivingEntity(LivingEntity livingEntity) {
         //Send back the entity ID
-        int entityID = livingEntity.getEntityId();
-        session.send(Integer.toString(entityID));
+//        int entityID = livingEntity.getEntityId();
+//        session.send(Integer.toString(entityID));
+        PyEntity pyLivingEntityReturn = new PyEntity(livingEntity);
+        session.send(pyLivingEntityReturn.toJson());
+    }
+
+    public void sendLivingEntities(Collection<LivingEntity> livingEntities) {
+        ArrayList<PyEntity> pyLivingEntities = new ArrayList<>();
+        Gson gson = new Gson();
+
+        for (Entity e : livingEntities) {
+            pyLivingEntities.add(new PyEntity((Entity) e));
+        }
+        String r = gson.toJson(pyLivingEntities);
+        session.send(r);
+//        ArrayList<String> entityIds = new ArrayList<>();
+//
+//        for (LivingEntity e : livingEntities) {
+//            entityIds.add(Integer.toString(e.getEntityId()));
+//        }
+//        session.send(String.join(",", entityIds));
     }
 
     public void sendAnimalTamer(AnimalTamer animalTamer) {

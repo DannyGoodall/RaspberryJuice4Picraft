@@ -7,6 +7,7 @@ import com.google.gson.reflect.TypeToken;
 import org.bukkit.*;
 import org.bukkit.block.Biome;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Villager;
 import org.bukkit.metadata.FixedMetadataValue;
@@ -189,6 +190,11 @@ class PythonCommand {
         return metadataValue;
     }
 
+    public Entity argToEntity(int index, pythondsminecraft plugin) {
+        PyEntity pyEntityParameter = gson.fromJson((String) args.get(index), PyEntity.class);
+        return pyEntityParameter.toEntity(plugin);
+    }
+
     public Collection<String> argToStringList(int index) {
         // Used to parse an array of string or to parse an array of JSON (as string) objects before they are converted
         List<String> paramList = (List<String>) args.get(index);
@@ -241,6 +247,30 @@ class PySerializedObject {
 
     String toJson() {
         return gson.toJson(this);
+    }
+}
+
+class PyEntity extends PySerializedObject {
+    public String _name = "Entity";
+    public int id=0;
+    public String name = "";
+
+    PyEntity() {
+
+    }
+
+    PyEntity(Entity entity){
+        this.id = entity.getEntityId();
+        // this.name = entity.getName();
+        this.name = entity.getType().toString();
+    }
+
+    public Entity toEntity(pythondsminecraft plugin){
+        return plugin.getEntity(this.id);
+    }
+
+    public String toString() {
+        return "PyEntity(" + this.name + "," + this.id + ")";
     }
 }
 
